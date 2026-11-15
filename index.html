@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>صائد الأعلام — أدوات CTF</title>
+<meta name="description" content="حقيبة أدوات CTF تعمل بالكامل داخل المتصفح: صائد الأعلام، فك الترميز، الشيفرات، تحليل الملفات، الهاش والأرقام، ومهمات تدريبية.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚩</text></svg>">
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<header>
+  <div class="top">
+    <div class="brand">
+      <div class="logo">🚩</div>
+      <div><div class="title">صائد الأعلام</div><div class="sub">حقيبة أدوات CTF للفريق</div></div>
+    </div>
+    <button class="hud" id="hudBtn" title="ملفك وأوسمتك">
+      <span class="avatar" id="hudAvatar">🐣</span>
+      <span class="hudinfo">
+        <span class="lvl"><b id="hudLevel">المستوى 1</b> · <span id="hudTitle">مبتدئ</span></span>
+        <span class="xpbar"><span id="hudXpFill"></span></span>
+        <span class="xptext"><span id="hudXp">0</span> نقطة خبرة · المستوى التالي عند <span id="hudNext">60</span></span>
+      </span>
+      <span class="chips"><span class="chip">🚩 <b id="hudFlags">0</b></span><span class="chip">🏅 <b id="hudBadges">0</b></span></span>
+    </button>
+    <div class="flagfmt">
+      <label for="flagPrefix">⚙️ بادئة العلم</label>
+      <input type="text" id="flagPrefix" dir="ltr" placeholder="CTF" autocomplete="off" spellcheck="false">
+      <details>
+        <summary>متقدم</summary>
+        <div>
+          <label class="small-t">تعبير نمطي مخصص (يتجاوز البادئة)</label>
+          <input type="text" id="flagRegex" dir="ltr" placeholder="KU\{[a-z0-9_]+\}" style="width:100%" spellcheck="false">
+          <label class="small-t"><input type="checkbox" id="flagCase" checked> تجاهل حالة الأحرف</label>
+          <p class="muted small-t">إذا تُركت فارغة نبحث عن أي <code>word{...}</code>. كتابة البادئة الصحيحة للمسابقة تجعل النتائج أنظف وتحسّن كشف ROT و XOR.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+  <nav id="tabs">
+    <button data-tab="scan" class="active"><i>🔎</i>الفحص السريع</button>
+    <button data-tab="decode"><i>🧩</i>فك الترميز</button>
+    <button data-tab="cipher"><i>🔐</i>الشيفرات</button>
+    <button data-tab="file"><i>🗂️</i>تحليل الملفات</button>
+    <button data-tab="hash"><i>#️⃣</i>الهاش والأرقام</button>
+    <button data-tab="train" class="train-tab"><i>🎯</i>التدريب <span class="badge-count" id="trainCount">0/0</span></button>
+    <button data-tab="cheat"><i>📖</i>الدليل السريع</button>
+  </nav>
+</header>
+
+<main>
+<!-- ================= QUICK SCAN ================= -->
+<section id="scan" class="panel active">
+  <div class="hero">
+    <h1>ألصق أي شيء… ونحن نصطاد العلم! 🎣</h1>
+    <p>نصوص مشفّرة، بيانات مرمّزة، سجلات، هاش، رقم ضخم — أو اسحب ملفاً. كل شيء يعمل داخل متصفحك ولا يُرفع إلى أي مكان.</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <textarea id="scanText" dir="auto" placeholder="ألصق النص هنا…" spellcheck="false"></textarea>
+      <div class="btns">
+        <button id="scanBtn" class="primary">🔎 افحص <span class="kbd">Ctrl+Enter</span></button>
+        <button data-clear="scanText">مسح</button>
+        <label class="small-t"><input type="checkbox" id="scanAuto" checked> فحص تلقائي أثناء الكتابة</label>
+      </div>
+    </div>
+    <div class="card drop" id="scanDrop">
+      <div class="drop-icon">📂</div>
+      <b>…أو اسحب ملفاً إلى هنا</b>
+      <p class="muted">صور، أرشيفات، مستندات، ملفات صوت، برامج. اضغط للاختيار.</p>
+      <input type="file" hidden>
+    </div>
+  </div>
+  <div id="scanOut"></div>
+</section>
+
+<!-- ================= DECODER ================= -->
+<section id="decode" class="panel">
+  <div class="card">
+    <h2>🧩 البيانات المرمّزة</h2>
+    <textarea id="decIn" dir="auto" placeholder="ألصق البيانات المرمّزة هنا" spellcheck="false"></textarea>
+    <div class="btns">
+      <button id="decMagic" class="primary">✨ فك تلقائي (Magic) <span class="kbd">Ctrl+Enter</span></button>
+      <label class="small-t">أقصى عدد طبقات <select id="decDepth"><option>4</option><option selected>6</option><option>8</option><option>10</option></select></label>
+      <button data-clear="decIn">مسح</button>
+    </div>
+  </div>
+  <div id="decMagicOut"></div>
+  <div class="card">
+    <h2>🧪 وصفة يدوية <span class="muted small-t">— كل ضغطة تُطبَّق على الناتج الحالي</span></h2>
+    <div class="ops" id="decOps"></div>
+    <div class="chain" id="decChain" dir="ltr">Input</div>
+    <textarea id="decOut" dir="ltr" readonly spellcheck="false"></textarea>
+    <div class="btns">
+      <button id="decCopy">📋 نسخ الناتج</button><button id="decUse">⬆️ استخدمه كمدخل</button><button id="decUndo">↩️ تراجع خطوة</button><button id="decReset">🔄 إعادة</button>
+      <span id="decOutInfo" class="muted small-t"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CIPHERS ================= -->
+<section id="cipher" class="panel">
+  <div class="card">
+    <h2>🔐 النص المشفّر</h2>
+    <textarea id="ciIn" dir="auto" placeholder="ألصق النص المشفّر هنا" spellcheck="false"></textarea>
+    <div class="btns">
+      <button id="ciAll" class="primary">⚡ شغّل كل التخمينات <span class="kbd">Ctrl+Enter</span></button>
+      <button data-clear="ciIn">مسح</button>
+      <span class="muted small-t">قيصر · Atbash · ROT47 · Affine · السياج المتعرج · حل Vigenère التلقائي · Bacon · XOR بايت واحد</span>
+    </div>
+  </div>
+  <div id="ciAllOut"></div>
+  <div class="grid2">
+    <div class="card">
+      <h3>🍋 Vigenère / Beaufort (بمفتاح)</h3>
+      <div class="btns"><input type="text" id="vgKey" dir="ltr" placeholder="المفتاح"><select id="vgMode"><option value="dec">فك Vigenère</option><option value="enc">تشفير Vigenère</option><option value="beau">Beaufort</option></select></div>
+      <div class="out" style="margin-top:8px"><pre id="vgOut"></pre></div>
+    </div>
+    <div class="card">
+      <h3>🏛️ قيصر (إزاحة يدوية)</h3>
+      <div class="btns" dir="ltr"><input type="range" id="csShift" min="0" max="25" value="13" style="flex:1"><b id="csVal">13</b></div>
+      <div class="btns"><label class="small-t"><input type="checkbox" id="csDigits"> أزِح الأرقام أيضاً</label></div>
+      <div class="out" style="margin-top:8px"><pre id="csOut"></pre></div>
+    </div>
+    <div class="card">
+      <h3>⚡ XOR</h3>
+      <div class="btns">
+        <label class="small-t">المدخل <select id="xoFmt"><option value="auto">كشف تلقائي</option><option value="hex">hex</option><option value="base64">base64</option><option value="text">نص</option><option value="decimal">بايتات عشرية</option></select></label>
+        <input type="text" id="xoKey" dir="ltr" placeholder="المفتاح"><select id="xoKeyFmt"><option value="text">المفتاح نص</option><option value="hex">المفتاح hex</option></select>
+      </div>
+      <div class="btns"><label class="small-t">نص معروف</label><input type="text" id="xoKnown" dir="ltr" value="flag{" style="width:110px"><label class="small-t">عند الموضع</label><input type="number" id="xoOff" value="0" min="0"></div>
+      <div class="btns"><button id="xoKnownBtn" class="primary">🔑 استرجاع المفتاح</button><button id="xoBrute">🎲 تخمين بايت واحد</button></div>
+      <div id="xoInfo" class="status"></div>
+      <div class="out" style="margin-top:8px"><pre id="xoOut"></pre></div>
+    </div>
+    <div class="card">
+      <h3>🧮 Affine · السياج المتعرج · Bacon · Atbash</h3>
+      <div class="btns"><label class="small-t">Affine a</label><select id="afA"></select><label class="small-t">b</label><input type="number" id="afB" value="0" min="0" max="25"></div>
+      <div class="btns"><label class="small-t">الصفوف</label><input type="number" id="rfRails" value="3" min="2" max="50"><label class="small-t">إزاحة</label><input type="number" id="rfOff" value="0" min="0"><select id="rfMode"><option value="dec">فك</option><option value="enc">تشفير</option></select></div>
+      <div class="out" style="margin-top:8px"><table id="miscOut"></table></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🔤 مساعد الاستبدال <span class="muted small-t">— اكتب الحرف الأصلي تحت كل حرف مشفّر</span></h3>
+    <div class="subgrid" id="subGrid" dir="ltr"></div>
+    <div class="btns"><button id="subFreq">📊 تخمين من تكرار الحروف</button><button id="subClear">مسح التعيين</button><span class="muted small-t">الحروف غير المعيّنة تظهر _ . للنصوص الطويلة موقع quipqiup.com يحلها تلقائياً.</span></div>
+    <div class="out" style="margin-top:8px"><pre id="subOut"></pre></div>
+  </div>
+  <div class="card">
+    <h3>📊 تحليل تكرار الحروف</h3>
+    <div id="freqInfo" class="muted small-t"></div>
+    <div class="bars" id="freqBars" dir="ltr"></div>
+    <div style="height:22px"></div>
+    <div class="muted small-t">الأزرق = نصك، الرمادي = الإنجليزية المعتادة. قمم مُزاحة جانبياً = قيصر. نفس الشكل لكن بحروف مختلفة = استبدال. شكل مسطّح = Vigenère.</div>
+  </div>
+</section>
+
+<!-- ================= FILE TRIAGE ================= -->
+<section id="file" class="panel">
+  <div class="card drop" id="fileDrop">
+    <div class="drop-icon">🗂️</div>
+    <b>اسحب ملفاً للتحليل الكامل</b>
+    <p class="muted">النوع الحقيقي · ملفات مخفية ومضمّنة · بيانات بعد نهاية الملف · بيانات EXIF و GPS · إصلاح PNG · طبقات البتات و LSB · المخطط الطيفي للصوت · النصوص · عرض Hex</p>
+    <input type="file" hidden>
+  </div>
+  <div id="fileOut"></div>
+</section>
+
+<!-- ================= HASH & NUMBERS ================= -->
+<section id="hash" class="panel">
+  <div class="grid2">
+    <div class="card">
+      <h3>🔍 تعرّف على هاش / فك JWT</h3>
+      <input type="text" id="hiIn" dir="auto" placeholder="ألصق هاش أو سطر $6$… أو رمز JWT" style="width:100%" spellcheck="false">
+      <div id="hiOut" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h3>🧂 احسب هاش لنص</h3>
+      <textarea id="hcIn" dir="auto" placeholder="النص المراد حساب الهاش له" style="min-height:60px" spellcheck="false"></textarea>
+      <table id="hcOut"></table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🎯 فحص كلمات مرشحة مقابل هاش <span class="muted small-t">— مثلاً كلمات وجدتها في نص التحدي</span></h3>
+    <div class="grid2">
+      <div><input type="text" id="hwHash" dir="ltr" placeholder="الهاش الهدف (MD5 / SHA-1 / SHA-256 / SHA-512)" style="width:100%" spellcheck="false">
+        <div class="btns"><label class="small-t"><input type="checkbox" id="hwVar" checked> جرّب أيضاً: أحرف صغيرة / كبيرة / أول حرف كبير / معكوسة / مع رقم 0–99 في النهاية</label></div>
+        <div class="btns"><button id="hwBtn" class="primary">✅ افحص</button><span id="hwOut" class="status"></span></div></div>
+      <textarea id="hwWords" dir="ltr" placeholder="كلمة واحدة في كل سطر" spellcheck="false"></textarea>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>🔢 محوّل الأرقام</h3>
+      <div class="btns"><input type="text" id="nmIn" dir="ltr" placeholder="0x.. أو 0b.. أو رقم عشري" style="flex:1" spellcheck="false">
+        <select id="nmBase"><option value="auto">تلقائي</option><option value="2">أساس 2</option><option value="8">أساس 8</option><option value="10">أساس 10</option><option value="16">أساس 16</option><option value="36">أساس 36</option></select></div>
+      <table id="nmOut" style="margin-top:8px"></table>
+    </div>
+    <div class="card">
+      <h3>🔡 نص ← أكواد الحروف</h3>
+      <input type="text" id="tcIn" dir="auto" placeholder="اكتب نصاً" style="width:100%" spellcheck="false">
+      <div id="tcOut" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🔑 مساعد RSA <span class="muted small-t">— فك RSA الأساسي بالأعداد المعطاة في التحدي</span></h3>
+    <div class="grid3">
+      <label class="small-t">p <input type="text" id="rsP" dir="ltr" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">q <input type="text" id="rsQ" dir="ltr" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">n (إن لم يتوفر p و q — حلّله أولاً في factordb.com) <input type="text" id="rsN" dir="ltr" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">e <input type="text" id="rsE" dir="ltr" value="65537" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">c (النص المشفّر) <input type="text" id="rsC" dir="ltr" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">d (اختياري) <input type="text" id="rsD" dir="ltr" style="width:100%" spellcheck="false"></label>
+    </div>
+    <div class="btns"><button id="rsBtn" class="primary">🔓 فك التشفير</button><span class="muted small-t">الأرقام عشرية أو بصيغة 0x. إذا كان e صغيراً (مثل 3) نجرّب الجذر الصحيح لـ c تلقائياً.</span></div>
+    <table id="rsOut" style="margin-top:8px"></table>
+  </div>
+</section>
+
+<!-- ================= TRAINING ================= -->
+<section id="train" class="panel">
+  <div class="hero train-hero">
+    <h1>🎯 ساحة التدريب</h1>
+    <p>حلّ المهمات، اجمع نقاط الخبرة، وافتح الأوسمة. كل مهمة تخفي علماً — استخدم الأدوات للعثور عليه ثم أدخله للتحقق.</p>
+    <div class="train-progress"><div class="tp-bar"><span id="tpFill"></span></div><span id="tpText"></span></div>
+  </div>
+  <div class="filters" id="trFilters">
+    <button class="on" data-f="all">الكل</button><button data-f="1">⭐ سهل</button><button data-f="2">⭐⭐ متوسط</button><button data-f="3">⭐⭐⭐ صعب</button><button data-f="todo">لم تُحلّ بعد</button>
+  </div>
+  <div class="missions" id="missions"></div>
+</section>
+
+<!-- ================= CHEAT SHEET ================= -->
+<section id="cheat" class="panel cheat">
+  <div class="card">
+    <h2>⏱️ أول 60 ثانية في أي تحدٍّ</h2>
+    <ul>
+      <li>اقرأ <b>العنوان والوصف مرتين</b> — التلميحات غالباً في الكلمات (مثلاً "سلطة" ← قيصر، "متعرج" ← السياج المتعرج، "Bacon"، "ليمون" ← مفتاح Vigenère).</li>
+      <li>اكتب <b>بادئة العلم</b> في الأعلى، ثم ألصق أو اسحب كل شيء في <b>الفحص السريع</b>.</li>
+      <li>للملفات: تأكد من <b>النوع الحقيقي مقابل الامتداد</b>، و<b>البيانات الوصفية</b>، و<b>النصوص</b>، و<b>البيانات بعد نهاية الملف</b>، و<b>الملفات المضمّنة</b> (تحليل الملفات يفعل الخمسة).</li>
+      <li>حدّد وقتاً: إن لم تتقدّم خلال 15 دقيقة، دوّن ما جربته وانتقل لتحدٍّ آخر.</li>
+      <li>قبل الإرسال: انتبه للحروف المتشابهة (<code>0/O</code>، <code>1/l/I</code>)، والبادئة، والمسافات الزائدة.</li>
+    </ul>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>🧩 تعرّف على الترميز من شكله</h3>
+      <table>
+        <tr><td>A–Z a–z 0–9 + / وينتهي بـ = أو ==</td><td>Base64</td></tr>
+        <tr><td>- و _ بدلاً من + /</td><td>Base64URL (وأجزاء JWT)</td></tr>
+        <tr><td>فقط A–Z و 2–7 مع ======</td><td>Base32</td></tr>
+        <tr><td>بلا 0 O I l، أحرف مختلطة</td><td>Base58</td></tr>
+        <tr><td>&lt;~ … ~&gt; أو رموز كثيرة</td><td>Base85 / Ascii85</td></tr>
+        <tr><td>0–9 a–f بطول زوجي</td><td>Hex (ست عشري)</td></tr>
+        <tr><td>مجموعات من 8 أصفار وآحاد</td><td>ثنائي Binary</td></tr>
+        <tr><td>أرقام بين 32 و 126 بمسافات</td><td>ASCII عشري</td></tr>
+        <tr><td>مجموعات 3 أرقام من 0 إلى 7</td><td>ثُماني Octal</td></tr>
+        <tr><td>%41%42 …</td><td>ترميز URL</td></tr>
+        <tr><td>&amp;#65; &amp;#x41;</td><td>كيانات HTML</td></tr>
+        <tr><td>.- -... / …</td><td>شيفرة مورس</td></tr>
+        <tr><td>+++[&gt;++&lt;-]&gt;.</td><td>Brainfuck (فك الترميز ← تشغيل)</td></tr>
+        <tr><td>eyJ… . eyJ… . xxx</td><td>JWT (تبويب الهاش يفكّه)</td></tr>
+        <tr><td>رقم عشري ضخم واحد</td><td>رقم ← بايتات (محوّل الأرقام)</td></tr>
+        <tr><td>Ook. Ook? / رموز تعبيرية / أشكال</td><td>لغات غريبة — جرّب "cipher identifier" في dcode.fr</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🔐 التشفير الكلاسيكي</h3>
+      <table>
+        <tr><td>حروف فقط، وأطوال الكلمات طبيعية</td><td>قيصر / ROT / Atbash / استبدال</td></tr>
+        <tr><td>مؤشر التطابق ≈ 0.066</td><td>استبدال أحادي أو تبديل مواقع</td></tr>
+        <tr><td>مؤشر التطابق ≈ 0.04</td><td>Vigenère — حل تلقائي أو المفتاح في نص التحدي</td></tr>
+        <tr><td>الحروف صحيحة لكن الترتيب خاطئ</td><td>السياج المتعرج / تبديل الأعمدة</td></tr>
+        <tr><td>حرفان فقط A و B، أو خطّان مختلفان</td><td>شيفرة Bacon</td></tr>
+        <tr><td>النص بايتات (hex/base64)</td><td>XOR — استخدم النص المعروف <code>flag{</code></td></tr>
+        <tr><td>رموز في شبكة / نقاط</td><td>Pigpen، برايل، الإشارات — dcode.fr</td></tr>
+        <tr><td>أزواج أرقام / أرقام لوحة الهاتف</td><td>مربع بوليبيوس، لوحة الهاتف (T9)</td></tr>
+        <tr><td>معطى n و e و c</td><td>RSA: حلّل n في factordb.com ← مساعد RSA</td></tr>
+        <tr><td>e = 3 ورسالة قصيرة</td><td>مساعد RSA يجرّب الجذر التكعيبي</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🗂️ التحليل الجنائي</h3>
+      <ul>
+        <li>الامتداد قد يكذب: ثق في <b>التوقيع السحري</b>. ملفات docx/xlsx/apk/jar هي في الحقيقة ZIP — افتحها وابحث داخلها.</li>
+        <li><b>بيانات بعد النهاية</b> لملف PNG (IEND) أو JPEG (FFD9) أو ZIP مكان إخفاء كلاسيكي.</li>
+        <li><b>PNG بخطأ CRC في IHDR</b> = العرض أو الارتفاع عُدّل — تحليل الملفات يجد الأبعاد الحقيقية.</li>
+        <li><b>ZIP بكلمة سر</b>: ابحث عن كلمة السر في مكان آخر من التحدي (البيانات الوصفية، النصوص، الصورة).</li>
+        <li><b>PCAP</b>: في Wireshark ← Statistics ← Protocol Hierarchy؛ زر يمين ← Follow ← TCP Stream؛ File ← Export Objects ← HTTP.</li>
+        <li><b>PDF</b>: النص تحت المربعات السوداء يمكن نسخه أحياناً؛ افحص الملفات المضمّنة والبيانات الوصفية.</li>
+        <li><b>تفريغ ذاكرة</b> ← Volatility؛ <b>صورة قرص</b> ← Autopsy أو FTK Imager.</li>
+        <li>إنتروبيا عالية (≈8.0) = بيانات مضغوطة أو مشفّرة؛ منخفضة = نص أو حشو.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🖼️ إخفاء المعلومات (Stego)</h3>
+      <ul>
+        <li>الصور: <b>البيانات الوصفية</b> أولاً، ثم <b>طبقات البتات</b> (ابحث عن نص أو نمط في الطبقة 0)، ثم <b>استخراج LSB</b>.</li>
+        <li>الفحص السريع يجرّب 56 تركيبة LSB تلقائياً على صور PNG/BMP/GIF/WebP.</li>
+        <li>إخفاء JPEG (steghide/outguess) يحتاج كلمة مرور — جرّب فارغة أو كلمات من التحدي.</li>
+        <li>الصوت: افتح <b>المخطط الطيفي</b> (غالباً يُرسم نص في الترددات). النغمات قد تكون مورس أو DTMF أو SSTV.</li>
+        <li>النصوص: حروف بعرض صفري أو مسافات/Tab في نهاية الأسطر. الصقها في الفحص السريع — الحروف الخفية تظهر كنقاط حمراء.</li>
+        <li>رموز QR والباركود: امسحها بكاميرا الهاتف أو zxing.org؛ حسّن الألوان بطبقات البتات أولاً.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🌐 الويب (فحص فقط)</h3>
+      <ul>
+        <li>اعرض مصدر الصفحة (Ctrl+U) وابحث عن <code>flag</code> والتعليقات <code>&lt;!-- --&gt;</code> والحقول المخفية.</li>
+        <li>افحص <code>/robots.txt</code> و <code>/sitemap.xml</code> بحثاً عن صفحات غير مدرجة.</li>
+        <li>أدوات المطوّر ← <b>Application</b>: الكوكيز و localStorage — القيم غالباً Base64 أو JWT.</li>
+        <li>أدوات المطوّر ← <b>Network</b>: ترويسات الاستجابة وردود الـ API والملفات المحمّلة.</li>
+        <li>أدوات المطوّر ← <b>Sources</b>: ابحث في كل ملفات JavaScript (Ctrl+Shift+F).</li>
+        <li>الصق أي رمز مريب في الفحص السريع أو في فاك JWT.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🌍 الاستخبارات المفتوحة (OSINT)</h3>
+      <ul>
+        <li>موقع الصورة: GPS في EXIF (تحليل الملفات يعطيك رابط الخريطة)، ثم البحث العكسي بالصور (Google Lens، Bing، Yandex، TinEye).</li>
+        <li>المعالم واللافتات ولوحات السيارات واللغة واتجاه القيادة تضيّق نطاق البلد.</li>
+        <li>النسخ القديمة من المواقع: Wayback Machine (web.archive.org).</li>
+        <li>أسماء المستخدمين لشخصية التحدي: ابحث عن الاسم نفسه في منصات مختلفة.</li>
+        <li>النطاقات: سجلات WHOIS و DNS (سجلات TXT تحتوي أحياناً على أعلام).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🧰 أدوات مجانية تستحق الحفظ (بدون ذكاء اصطناعي)</h3>
+    <ul>
+      <li><b>CyberChef</b> (gchq.github.io/CyberChef) — محوّل ضخم بالوصفات. <b>dcode.fr</b> — مئات الشيفرات ومعرّف شيفرات. <b>quipqiup.com</b> — حل الاستبدال.</li>
+      <li><b>factordb.com</b> — تحليل أعداد RSA. <b>Wireshark</b> — التقاطات الشبكة. <b>Audacity</b> / <b>Sonic Visualiser</b> — الصوت.</li>
+      <li><b>Ghidra</b> — الهندسة العكسية للبرامج. <b>Aperi'Solve</b> — يشغّل أدوات إخفاء الصور دفعة واحدة.</li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<!-- profile / badges modal -->
+<div class="modal" id="profile" hidden>
+  <div class="modal-card">
+    <button class="close" id="profClose" aria-label="إغلاق">✕</button>
+    <div class="prof-head">
+      <div class="big-avatar" id="profAvatar">🐣</div>
+      <div>
+        <input type="text" id="profName" placeholder="اكتب اسمك يا بطل" maxlength="30">
+        <div class="prof-lvl" id="profLvl"></div>
+        <div class="xpbar big"><span id="profXpFill"></span></div>
+        <div class="muted small-t" id="profXpText"></div>
+      </div>
+    </div>
+    <div class="stats" id="profStats"></div>
+    <h3>🏅 الأوسمة</h3>
+    <div class="badges" id="profBadges"></div>
+    <h3>🪜 سُلّم المستويات</h3>
+    <div class="levels" id="profLevels"></div>
+    <div class="btns" style="justify-content:space-between;margin-top:14px"><span class="muted small-t">التقدّم محفوظ في هذا المتصفح فقط.</span><button id="profReset" class="danger">إعادة ضبط التقدّم</button></div>
+  </div>
+</div>
+
+<footer>صائد الأعلام — يعمل بالكامل داخل متصفحك وبدون إنترنت بعد التحميل. مخصّص للتدريب والمسابقات المصرّح بها.</footer>
+<div class="toast" id="toast"></div>
+<div class="unlock" id="unlock"></div>
+<script src="js/core.js"></script>
+<script src="js/forensics.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
