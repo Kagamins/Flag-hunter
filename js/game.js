@@ -6,7 +6,7 @@
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const KEY = 'ctfkit.game.v1';
-  const TOOLS = ['scan', 'decode', 'cipher', 'file', 'hash'];
+  const TOOLS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web'];
 
   const LEVELS = [[0, '🐣', 'مبتدئ'], [60, '🔍', 'مستكشف'], [180, '🕵️', 'محقق'], [400, '🧩', 'مفكّك شفرات'], [700, '🛡️', 'حارس رقمي'], [1100, '🚩', 'صائد أعلام'], [1600, '🏆', 'أسطورة CTF']];
   const BADGES = [
@@ -19,14 +19,15 @@
     { id: 'archive', icon: '📦', name: 'فاتح الصناديق', desc: 'اعثر على علم داخل أرشيف ZIP' },
     { id: 'png', icon: '🩹', name: 'طبيب الصور', desc: 'أصلح أبعاد صورة PNG معدّلة' },
     { id: 'audio', icon: '🎧', name: 'أذن ذهبية', desc: 'افتح المخطط الطيفي لملف صوتي' },
+    { id: 'webdet', icon: '🕸️', name: 'محقق الويب', desc: 'اعثر على علم داخل طلب أو استجابة HTTP' },
     { id: 'hash', icon: '🧂', name: 'صائد الهاشات', desc: 'طابق هاشاً مع كلمته الأصلية' },
     { id: 'rsa', icon: '🔑', name: 'كاسر RSA', desc: 'فك رسالة RSA' },
-    { id: 'explorer', icon: '🧭', name: 'المستكشف', desc: 'استخدم الأدوات الخمس كلها' },
+    { id: 'explorer', icon: '🧭', name: 'المستكشف', desc: 'استخدم الأدوات الست كلها' },
     { id: 'flags10', icon: '🎯', name: 'عشرة أعلام', desc: 'اجمع 10 أعلام مختلفة' },
     { id: 'm5', icon: '⭐', name: 'خمس مهمات', desc: 'حلّ 5 مهمات تدريبية' },
     { id: 'mall', icon: '👑', name: 'بطل التدريب', desc: 'حلّ كل مهمات التدريب' },
   ];
-  const MISSION_BADGE = { caesar: 'caesar', onion: 'layers', xor: 'xor', lsb: 'pixels', exif: 'meta', zip: 'archive', png: 'png', audio: 'audio', hash: 'hash', rsa: 'rsa' };
+  const MISSION_BADGE = { caesar: 'caesar', onion: 'layers', xor: 'xor', lsb: 'pixels', exif: 'meta', zip: 'archive', png: 'png', audio: 'audio', hash: 'hash', rsa: 'rsa', web: 'webdet' };
   const MISSIONS = window.CTF_MISSIONS || [];
 
   const def = () => ({ xp: 0, flags: [], tools: [], badges: [], solved: {}, hints: {}, name: '', toolXp: 0 });
@@ -97,6 +98,7 @@
       if (/EXIF/.test(m)) badge('meta');
       if (/ZIP/.test(m)) badge('archive');
       if (/XOR|المفتاح 0x/.test(m)) badge('xor');
+      if (/^HTTP/.test(m)) badge('webdet');
     }
     if (!st.flags.length) return;
     save();
@@ -150,7 +152,7 @@
   /* ---------- training missions ---------- */
   let filter = 'all';
   const b64ToBytes = b => { const s = atob(b); const a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; };
-  const TOOLNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش والأرقام', file: 'تحليل الملفات', scan: 'الفحص السريع' };
+  const TOOLNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش والأرقام', file: 'تحليل الملفات', scan: 'الفحص السريع', web: 'أدوات الويب' };
   function renderMissions() {
     const box = $('#missions'); if (!box) return;
     const solved = MISSIONS.filter(m => st.solved[m.id]).length;

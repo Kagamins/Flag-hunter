@@ -48,6 +48,7 @@
     <button data-tab="cipher"><i>🔐</i>الشيفرات</button>
     <button data-tab="file"><i>🗂️</i>تحليل الملفات</button>
     <button data-tab="hash"><i>#️⃣</i>الهاش والأرقام</button>
+    <button data-tab="web"><i>🌐</i>الويب</button>
     <button data-tab="train" class="train-tab"><i>🎯</i>التدريب <span class="badge-count" id="trainCount">0/0</span></button>
     <button data-tab="cheat"><i>📖</i>الدليل السريع</button>
   </nav>
@@ -222,6 +223,34 @@
   </div>
 </section>
 
+<!-- ================= WEB ================= -->
+<section id="web" class="panel">
+  <div class="hero web-hero">
+    <h1>🌐 أدوات الويب — رفيق Burp Suite</h1>
+    <p>انسخ أي طلب أو استجابة HTTP من Burp أو أدوات المطوّر في المتصفح أو تطبيق على الآيباد، والصقها هنا: نفكّ الكوكيز والمعاملات والترويسات تلقائياً ونبحث عن العلم.</p>
+  </div>
+  <div class="card">
+    <h2>🛰️ فاحص الطلبات والاستجابات</h2>
+    <textarea id="wbIn" dir="ltr" placeholder="GET /page?x=1 HTTP/1.1&#10;Host: example.com&#10;Cookie: session=...&#10;&#10;— أو —&#10;&#10;HTTP/1.1 200 OK&#10;Set-Cookie: ...&#10;&#10;<html>..." spellcheck="false" style="min-height:170px"></textarea>
+    <div class="btns">
+      <button id="wbBtn" class="primary">🔬 حلّل <span class="kbd">Ctrl+Enter</span></button>
+      <button id="wbSample">🧪 مثال للتجربة</button>
+      <button data-clear="wbIn">مسح</button>
+      <span class="muted small-t">في Burp: زر يمين على الطلب ← Copy، أو انسخ من تبويب Raw.</span>
+    </div>
+  </div>
+  <div id="wbOut"></div>
+  <div class="card">
+    <h2>⚖️ المقارن (Comparer)</h2>
+    <div class="grid2">
+      <textarea id="cmpA" dir="ltr" placeholder="الاستجابة الأولى" spellcheck="false"></textarea>
+      <textarea id="cmpB" dir="ltr" placeholder="الاستجابة الثانية" spellcheck="false"></textarea>
+    </div>
+    <div class="btns"><button id="cmpBtn" class="primary">⚖️ قارن</button><label class="small-t"><input type="checkbox" id="cmpWs"> تجاهل المسافات</label><label class="small-t"><input type="checkbox" id="cmpCase"> تجاهل حالة الأحرف</label><label class="small-t"><input type="checkbox" id="cmpOnly" checked> أظهر الاختلافات فقط</label><span id="cmpInfo" class="status"></span></div>
+    <div class="out diff" id="cmpOut" style="margin-top:8px;max-height:480px"></div>
+  </div>
+</section>
+
 <!-- ================= TRAINING ================= -->
 <section id="train" class="panel">
   <div class="hero train-hero">
@@ -330,6 +359,34 @@
       </ul>
     </div>
   </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>🕸️ Burp Suite — دليل سريع</h3>
+      <ol class="steps">
+        <li>نزّل <b>Burp Suite Community Edition</b> المجاني من <span dir="ltr">portswigger.net</span> (ويندوز / ماك / لينكس).</li>
+        <li><b>Proxy ← Intercept ← Open browser</b>: متصفح Burp المدمج جاهز بدون إعداد شهادات.</li>
+        <li>تصفّح موقع التحدي، ثم افتح <b>Proxy ← HTTP history</b> لترى كل الطلبات والردود.</li>
+        <li>زر يمين على طلب ← <b>Send to Repeater</b>: عدّل قيمة (كوكي أو معامل) ثم <b>Send</b> وقارن الرد.</li>
+        <li><b>Target ← Site map</b>: كل المسارات والملفات التي اكتشفها Burp.</li>
+        <li><b>Decoder</b> و <b>Comparer</b> في Burp لهما بديل هنا: تبويب فك الترميز، والمقارن في تبويب الويب.</li>
+        <li>انسخ الطلب أو الرد والصقه في <b>تبويب الويب</b> هنا لفك الكوكيز والمعاملات تلقائياً.</li>
+      </ol>
+      <div class="muted small-t">استخدمه فقط على مواقع المسابقة أو المواقع المصرّح لك باختبارها.</div>
+    </div>
+    <div class="card">
+      <h3>📱 بدائل على الآيباد</h3>
+      <table>
+        <tr><td>HTTP Catcher</td><td>مجاني مع مشتريات داخلية — اعتراض وفحص وتعديل وإعادة إرسال الطلبات.</td></tr>
+        <tr><td>Proxyman</td><td>مجاني مع مشتريات داخلية — يلتقط HTTP/HTTPS على الجهاز نفسه (iPadOS 17 أو أحدث).</td></tr>
+        <tr><td>Proxygen</td><td>بروكسي تفاعلي مع محرر للطلبات (iPadOS 16.1 أو أحدث).</td></tr>
+      </table>
+      <ul style="margin-top:8px">
+        <li>تعمل كلها بإنشاء <b>VPN محلي</b> على الجهاز وتثبيت <b>شهادة</b> لفك HTTPS.</li>
+        <li><b>بعد المسابقة احذف الشهادة وملف التعريف</b> من الإعدادات ← عام ← VPN وإدارة الأجهزة.</li>
+        <li>صائد الأعلام نفسه يعمل في Safari على الآيباد — انسخ الطلب من التطبيق والصقه في تبويب الويب.</li>
+      </ul>
+    </div>
+  </div>
   <div class="card">
     <h3>🧰 أدوات مجانية تستحق الحفظ (بدون ذكاء اصطناعي)</h3>
     <ul>
@@ -368,6 +425,7 @@
 <div class="unlock" id="unlock"></div>
 <script src="js/core.js"></script>
 <script src="js/forensics.js"></script>
+<script src="js/web.js"></script>
 <script src="js/missions.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>

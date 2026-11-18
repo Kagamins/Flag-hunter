@@ -336,6 +336,12 @@
       }
     }
     if (text.trim().length <= 4000) C.magic(text.trim(), { depth: 6, maxNodes: 1200 }).flags.forEach(f => add(f.flag, f.chain.join(' → ') || 'مباشر'));
+    // drop garbled near-duplicates produced by long transform chains (keep the simpler, earlier find)
+    for (let i = res.length - 1; i > 0; i--) {
+      const f = res[i].flag;
+      const near = g => { const a = g.flag, L = Math.max(a.length, f.length); let p = 0; while (p < a.length && p < f.length && a[p] === f[p]) p++; let q = 0; while (q < a.length - p && q < f.length - p && a[a.length - 1 - q] === f[f.length - 1 - q]) q++; return (p + q) / L >= 0.7; };
+      if (res.slice(0, i).some(near)) res.splice(i, 1);
+    }
     const sre = C.strictFlagRe();
     res.forEach(r => { sre.lastIndex = 0; r.likely = sre.test(r.flag); });
     res.sort((a, b) => b.likely - a.likely);

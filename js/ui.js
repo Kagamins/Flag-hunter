@@ -1,7 +1,7 @@
 /* صائد الأعلام — واجهة الأدوات */
 (function () {
   'use strict';
-  const C = window.CTF, F = window.CTFF, G = window.GAME;
+  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -45,8 +45,8 @@
   });
 
   /* ---------- التبويبات ---------- */
-  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'train', 'cheat'];
-  const TABNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش', scan: 'الفحص', file: 'التحليل' };
+  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'train', 'cheat'];
+  const TABNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش', scan: 'الفحص', file: 'التحليل', web: 'الويب' };
   function showTab(id) {
     if (!TABS.includes(id)) id = 'scan';
     $$('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
@@ -58,17 +58,17 @@
   $$('#tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
   window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
   document.addEventListener('keydown', e => {
-    if (e.altKey && e.key >= '1' && e.key <= '7') { e.preventDefault(); showTab(TABS[+e.key - 1]); }
+    if (e.altKey && e.key >= '1' && e.key <= '8') { e.preventDefault(); showTab(TABS[+e.key - 1]); }
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       const id = $('.panel.active').id; e.preventDefault();
-      ({ scan: () => scanText(true), decode: runMagic, cipher: runAllCiphers })[id]?.();
+      ({ scan: () => scanText(true), decode: runMagic, cipher: runAllCiphers, web: runWeb })[id]?.();
     }
   });
   function sendTo(tab, text) {
-    const map = { decode: 'decIn', cipher: 'ciIn', hash: 'hiIn', scan: 'scanText' };
+    const map = { decode: 'decIn', cipher: 'ciIn', hash: 'hiIn', scan: 'scanText', web: 'wbIn' };
     const el = document.getElementById(map[tab]); if (!el) return;
     el.value = text; showTab(tab); el.dispatchEvent(new Event('input'));
-    if (tab === 'decode') runMagic(); if (tab === 'cipher') runAllCiphers();
+    if (tab === 'decode') runMagic(); if (tab === 'cipher') runAllCiphers(); if (tab === 'web') runWeb();
     window.scrollTo(0, 0);
   }
   function setField(id, val, tab) { showTab(tab); const el = document.getElementById(id); el.value = val; el.dispatchEvent(new Event('input')); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
@@ -551,6 +551,73 @@
     if (!d && !(e <= 17n)) rows.push(['الخطوة التالية', 'حلّل n أولاً (factordb.com) ثم أدخل p و q']);
     show();
   });
+
+  /* ================= الويب ================= */
+  function kvTable(rows, title, withDecode = true) {
+    if (!rows.length) return '';
+    let found = [];
+    const body = rows.map(([k, v, note]) => {
+      const d = withDecode ? W.decodeValue(v) : null;
+      if (d) found.push(d.text);
+      return `<tr><th dir="ltr">${vis(k)}</th><td class="mono">${vis(C.preview(v, 600))}${d ? `<div style="color:var(--mint);margin-top:3px">↳ <span class="tag good">${esc(d.how)}</span> ${vis(C.preview(d.text, 600))}</div>` : ''}${note ? `<div><span class="tag ${note[0]}">${esc(note[1])}</span></div>` : ''}</td><td>${copyBtn(d ? d.text : v)}</td></tr>`;
+    }).join('');
+    return { html: `<h3 style="margin-top:10px">${title} (${rows.length})</h3><table>${body}</table>`, found };
+  }
+  function runWeb() {
+    const raw = $('#wbIn').value, out = $('#wbOut');
+    if (!raw.trim()) { out.innerHTML = ''; return; }
+    const t0 = performance.now(), p = W.parseHttp(raw);
+    const decoded = []; let h = '', sec = '';
+    const add = r => { if (!r) return; sec += r.html; decoded.push(...r.found); };
+    if (p.kind === 'request') sec += `<div class="reqline"><b>${esc(p.method)}</b> ${vis(p.url)} <span class="muted">${esc(p.version)}</span></div>`;
+    else if (p.kind === 'response') sec += `<div class="reqline">${esc(p.version)} <b class="st${String(p.status)[0]}">${p.status}</b> ${esc(p.reason)}</div>`;
+    else sec += `<div class="noflag">لم نتعرّف على سطر HTTP في البداية — سنعامل النص كمحتوى (body).</div>`;
+    add(kvTable(p.query, '🔗 معاملات الرابط (Query)'));
+    add(kvTable(p.cookies, '🍪 الكوكيز (Cookie)'));
+    add(kvTable(p.setCookies.map(c => [c.name, c.value, (!c.httpOnly || !c.secure) ? ['warn', 'ينقصها ' + [!c.httpOnly && 'HttpOnly', !c.secure && 'Secure'].filter(Boolean).join(' و ')] : null]), '🍪 كوكيز يضعها الخادم (Set-Cookie)'));
+    add(kvTable(p.headers.filter(([k]) => !/^(cookie|set-cookie)$/i.test(k)).map(([k, v]) => [k, v, W.headerNote(k, v)]), '📨 الترويسات (Headers)', true));
+    add(kvTable(p.bodyParams, '📝 معاملات المحتوى (Body)'));
+    if (p.json) add(kvTable(W.flattenJson(p.json), '🧾 محتوى JSON'));
+    const hf = W.htmlFindings(p.body);
+    let hh = '';
+    if (hf.comments.length) hh += `<h3 style="margin-top:10px">💬 تعليقات HTML (${hf.comments.length})</h3>` + hf.comments.map(c => `<div class="mono" style="margin:3px 0">&lt;!-- ${vis(c)} --&gt; ${copyBtn(c)}</div>`).join('');
+    if (hf.hidden.length) hh += `<h3 style="margin-top:10px">🙈 حقول مخفية</h3><table>` + hf.hidden.map(([n, v]) => `<tr><th dir="ltr">${vis(n)}</th><td class="mono">${vis(v)}</td></tr>`).join('') + `</table>`;
+    if (hf.forms.length) hh += `<h3 style="margin-top:10px">📋 نماذج (Forms)</h3>` + hf.forms.map(f => `<div class="mono">${esc(f)}</div>`).join('');
+    if (hf.links.length || hf.scripts.length) hh += `<h3 style="margin-top:10px">🧭 روابط وملفات JavaScript</h3><div class="mono small-t">` + [...hf.scripts.map(x => '📜 ' + x), ...hf.links.slice(0, 80).map(x => '🔗 ' + x)].map(esc).join('<br>') + `</div>`;
+    if (hf.meta.length) hh += `<h3 style="margin-top:10px">🏷️ وسوم Meta</h3><table>` + hf.meta.map(([k, v]) => `<tr><th dir="ltr">${esc(k)}</th><td class="mono">${vis(v)}</td></tr>`).join('') + `</table>`;
+    decoded.push(...hf.comments, ...hf.hidden.map(x => x[1]));
+    const curl = W.toCurl(p);
+    const all = [raw, ...decoded].join('\n');
+    const flags = C.deepFlagSearch(all).flags.filter(f => f.likely !== false).map(f => ({ ...f, method: 'HTTP · ' + f.method }));
+    h += renderFlags(flags);
+    if (!flags.length) h += `<div class="noflag">🕵️ لا علم ظاهر بعد. راجع الكوكيز والترويسات والتعليقات بالأسفل، وجرّب تعديل القيم في Burp Repeater.</div>`;
+    h += `<div class="card"><h3>${p.kind === 'request' ? '📤 الطلب' : p.kind === 'response' ? '📥 الاستجابة' : '📄 المحتوى'}</h3>${sec}</div>`;
+    if (hh) h += `<div class="card">${hh}</div>`;
+    if (curl) h += `<div class="card"><h3>⌨️ أمر curl لإعادة إرسال الطلب</h3><div class="out"><pre>${esc(curl)}</pre></div><div class="btns">${copyBtn(curl, '📋 نسخ الأمر')}<span class="muted small-t">شغّله في الطرفية (Terminal) مثل Repeater في Burp — فقط على مواقع المسابقة.</span></div></div>`;
+    if (p.body && p.body.trim() && !p.json) h += `<div class="card"><h3>📦 المحتوى (Body) — ${fmtSize(new TextEncoder().encode(p.body).length)}</h3><div class="out"><pre>${vis(C.preview(p.body, 8000))}</pre></div><div class="btns">${sendBtn('scan', p.body, '🔎 افحص المحتوى')}${copyBtn(p.body)}</div></div>`;
+    h += `<div class="status">⏱️ ${ms(t0)} ملّي ثانية</div>`;
+    out.innerHTML = h;
+  }
+  $('#wbBtn').addEventListener('click', runWeb);
+  $('#wbIn').addEventListener('input', debounce(() => { if ($('#wbIn').value.length < 200000) runWeb(); }, 400));
+  $('#wbSample').addEventListener('click', () => { $('#wbIn').value = W.SAMPLE; runWeb(); });
+  function runCompare() {
+    const a = $('#cmpA').value, b = $('#cmpB').value;
+    if (!a && !b) { $('#cmpOut').innerHTML = ''; $('#cmpInfo').textContent = ''; return; }
+    const d = W.diffLines(a, b, { ignoreWs: $('#cmpWs').checked, ignoreCase: $('#cmpCase').checked }), only = $('#cmpOnly').checked;
+    const cnt = { add: 0, del: 0, chg: 0 }; d.forEach(x => { if (cnt[x.t] != null) cnt[x.t]++; });
+    $('#cmpInfo').innerHTML = (cnt.add + cnt.del + cnt.chg) ? `<span class="tag good">+${cnt.add} مضاف</span><span class="tag bad">−${cnt.del} محذوف</span><span class="tag warn">~${cnt.chg} متغيّر</span>${d.truncated ? ' (أول 2500 سطر)' : ''}` : '<span class="tag good">✓ متطابقان</span>';
+    $('#cmpOut').innerHTML = d.filter(x => !only || x.t !== 'same').slice(0, 3000).map(x => {
+      if (x.t === 'same') return `<div class="dl same"><span class="sig"> </span>${esc(x.a)}</div>`;
+      if (x.t === 'add') return `<div class="dl add"><span class="sig">+</span>${vis(x.b)}</div>`;
+      if (x.t === 'del') return `<div class="dl del"><span class="sig">−</span>${vis(x.a)}</div>`;
+      const c = W.charDiff(x.a, x.b);
+      return `<div class="dl chg"><span class="sig">−</span>${esc(c.pre)}<mark>${vis(c.aMid)}</mark>${esc(c.post)}</div><div class="dl chg"><span class="sig">+</span>${esc(c.pre)}<mark>${vis(c.bMid)}</mark>${esc(c.post)}</div>`;
+    }).join('') || '<div class="muted">لا اختلافات.</div>';
+  }
+  $('#cmpBtn').addEventListener('click', runCompare);
+  ['#cmpWs', '#cmpCase', '#cmpOnly'].forEach(s => $(s).addEventListener('change', runCompare));
+  ['#cmpA', '#cmpB'].forEach(s => $(s).addEventListener('input', debounce(() => { if ($('#cmpA').value.length + $('#cmpB').value.length < 400000) runCompare(); }, 400)));
 
   window.UI = { sendTo, setField, fillRSA, openBytes, showTab, copy };
   showTab(location.hash.slice(1) || 'scan');

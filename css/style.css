@@ -210,3 +210,16 @@ canvas { image-rendering: pixelated; max-width: 100%; background: repeating-coni
 footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 22px; }
 @media (max-width: 700px) { .stats { grid-template-columns: repeat(2, 1fr); } .flagfmt { margin-inline-start: 0; } .top { gap: 10px; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- web tab ---------- */
+.web-hero { background: linear-gradient(135deg, #2a3f8f, #6b2a7a); }
+.web-hero::after { content: "🌐"; }
+.reqline { font-family: var(--mono); font-size: 15px; direction: ltr; text-align: left; background: #11112e; border-radius: 10px; padding: 8px 12px; word-break: break-all; }
+.reqline b { color: var(--gold); }
+.st2 { color: var(--mint); } .st3 { color: var(--sky); } .st4 { color: var(--warn); } .st5 { color: var(--bad); }
+.steps { margin: 0; padding-inline-start: 20px; } .steps li { margin: 5px 0; }
+.diff .dl { font-family: var(--mono); font-size: 12.5px; white-space: pre-wrap; word-break: break-all; direction: ltr; text-align: left; padding: 1px 8px; border-radius: 4px; }
+.diff .dl.add { background: #12402e; } .diff .dl.del { background: #4a1828; } .diff .dl.chg { background: #3a3210; }
+.diff .dl.same { color: var(--muted); }
+.diff mark { background: var(--gold); color: #1a1240; border-radius: 3px; padding: 0 1px; }
+.diff .sig { display: inline-block; width: 16px; font-weight: 800; }
