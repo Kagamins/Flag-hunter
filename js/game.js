@@ -189,6 +189,7 @@
       else if (m.rsa) UI.fillRSA(m.rsa);
       else if (m.id === 'big') UI.setField('nmIn', m.data, 'hash');
       else if (m.id === 'hash') UI.setField('hwHash', m.data, 'hash');
+      else if (m.id === 'crack') UI.setField('crkHash', m.data, 'hash');
       else UI.sendTo(m.tool, m.data);
     } else if (act === 'copy') { UI.copy(m.data); }
     else if (act === 'hint') { if (!st.hints[m.id]) { st.hints[m.id] = true; save(); renderMissions(); } }

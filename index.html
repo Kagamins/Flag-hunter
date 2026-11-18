@@ -203,6 +203,26 @@
       <textarea id="hwWords" dir="ltr" placeholder="كلمة واحدة في كل سطر" spellcheck="false"></textarea>
     </div>
   </div>
+  <div class="card">
+    <h3>🔨 كسر الهاش <span class="muted small-t">— الهاش لا يُفكّ، لكن يمكن تجربة مدخلات حتى نجد الأصل (ينجح فقط إن كان قصيراً أو شائعاً)</span></h3>
+    <input type="text" id="crkHash" dir="ltr" placeholder="الهاش الهدف (MD5 / SHA-1 / SHA-256)" style="width:100%" spellcheck="false">
+    <div class="btns" style="margin-top:8px">
+      <label class="small-t"><input type="radio" name="crkMode" value="dict" checked> قائمة كلمات</label>
+      <label class="small-t"><input type="radio" name="crkMode" value="brute"> قوة غاشمة (كل الاحتمالات)</label>
+    </div>
+    <div id="crkDict">
+      <div class="btns"><label class="small-t"><input type="checkbox" id="crkCommon" checked> استخدم قائمة الكلمات الشائعة المدمجة (~140)</label><label class="small-t"><input type="checkbox" id="crkMut" checked> جرّب التحويرات (حالة الأحرف · leet · أرقام 0–999 · رموز)</label></div>
+      <textarea id="crkWords" dir="ltr" placeholder="كلمات إضافية من التحدي — واحدة في كل سطر (اختياري)" style="min-height:60px" spellcheck="false"></textarea>
+    </div>
+    <div id="crkBrute" hidden>
+      <div class="btns"><label class="small-t">مجموعة الرموز <select id="crkCharset"><option value="digits">أرقام فقط (0-9)</option><option value="lower" selected>أحرف صغيرة (a-z)</option><option value="lower+digits">صغيرة + أرقام</option><option value="alpha">أحرف فقط (A-Z a-z)</option><option value="alnum">أحرف + أرقام</option><option value="hex">hex (0-9 a-f)</option><option value="printable">كل الرموز الشائعة</option></select></label>
+        <label class="small-t">الطول من <input type="number" id="crkMin" value="1" min="1" max="12"></label><label class="small-t">إلى <input type="number" id="crkMax" value="4" min="1" max="12"></label></div>
+      <div id="crkEst" class="status"></div>
+    </div>
+    <div class="btns"><button id="crkBtn" class="primary">🔨 ابدأ الكسر</button><button id="crkStop" hidden>⏹️ إيقاف</button></div>
+    <div class="status" id="crkProg"></div>
+    <div id="crkOut"></div>
+  </div>
   <div class="grid2">
     <div class="card">
       <h3>🔢 محوّل الأرقام</h3>
@@ -463,6 +483,7 @@
 <script src="js/forensics.js"></script>
 <script src="js/web.js"></script>
 <script src="js/jsfuck.js"></script>
+<script src="js/crack.js"></script>
 <script src="js/missions.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>

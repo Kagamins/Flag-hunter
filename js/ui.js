@@ -1,7 +1,7 @@
 /* صائد الأعلام — واجهة الأدوات */
 (function () {
   'use strict';
-  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW, JF = window.CTFJ;
+  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW, JF = window.CTFJ, KR = window.CTFK;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -511,7 +511,7 @@
     if (jwt) { o.innerHTML = `<span class="tag good">JWT</span> الخوارزمية <b>${esc(jwt.header.alg || '?')}</b>${String(jwt.header.alg).toLowerCase() === 'none' ? ' <span class="tag warn">غير موقّع</span>' : ''}<h3 style="margin-top:8px">الترويسة</h3><div class="out"><pre>${esc(JSON.stringify(jwt.header, null, 2))}</pre></div><h3 style="margin-top:8px">المحتوى</h3><div class="out"><pre>${esc(JSON.stringify(jwt.payload, null, 2))}</pre></div>` + (jwt.payload.exp ? `<div class="status">ينتهي في ${new Date(jwt.payload.exp * 1000).toISOString()}</div>` : ''); return; }
     const r = C.identifyHash(s);
     o.innerHTML = r.length ? `<ul class="idlist">${r.map(x => `<li><b>${esc(x.name)}</b> <span class="muted">${esc(x.note)}</span></li>`).join('')}</ul><div class="muted small-t">${s.length} حرفاً. جرّب «فحص كلمات مرشحة» بالأسفل بكلمات من التحدي.</div>` : '<span class="muted">ليست صيغة هاش معروفة. جرّب الفحص السريع.</span>';
-    if (/^[a-f0-9]{32,128}$/i.test(s)) $('#hwHash').value = s;
+    if (/^[a-f0-9]{32,128}$/i.test(s)) { $('#hwHash').value = s; $('#crkHash').value = s; }
   });
   const ASNAME = { text: 'نص UTF-8', hex: 'بايتات hex', base64: 'base64', decimal: 'بايتات عشرية' };
   const runHashCalc = debounce(async () => {
@@ -654,6 +654,48 @@
   $('#cmpBtn').addEventListener('click', runCompare);
   ['#cmpWs', '#cmpCase', '#cmpOnly'].forEach(s => $(s).addEventListener('change', runCompare));
   ['#cmpA', '#cmpB'].forEach(s => $(s).addEventListener('input', debounce(() => { if ($('#cmpA').value.length + $('#cmpB').value.length < 400000) runCompare(); }, 400)));
+
+  /* ================= كسر الهاش ================= */
+  const crkMode = () => $('input[name=crkMode]:checked').value;
+  function crkToggle() { const b = crkMode() === 'brute'; $('#crkBrute').hidden = !b; $('#crkDict').hidden = b; if (b) crkEst(); }
+  $$('input[name=crkMode]').forEach(r => r.addEventListener('change', crkToggle));
+  function crkEst() {
+    const cs = KR.CHARSETS[$('#crkCharset').value], n = cs.length, mn = +$('#crkMin').value || 1, mx = Math.max(mn, +$('#crkMax').value || 1);
+    const total = KR.bruteCount(n, mn, mx), rate = 180000, secs = total / rate;
+    const time = secs < 1 ? 'أقل من ثانية' : secs < 90 ? Math.round(secs) + ' ثانية' : secs < 5400 ? Math.round(secs / 60) + ' دقيقة' : secs < 1e6 ? Math.round(secs / 3600) + ' ساعة' : 'وقت طويل جداً';
+    $('#crkEst').innerHTML = `${total.toLocaleString('ar')} احتمال · تقدير زمني ≈ ${time} (SHA أبطأ من MD5)` + (total > 5e7 ? ' <span class="tag bad">كبير جداً — قلّل الطول أو المجموعة</span>' : '');
+  }
+  ['#crkCharset', '#crkMin', '#crkMax'].forEach(x => $(x).addEventListener('input', crkEst));
+  let crkRunning = false;
+  $('#crkBtn').addEventListener('click', async () => {
+    if (crkRunning) return;
+    const target = $('#crkHash').value.trim().toLowerCase();
+    const algo = KR.algoFor(target);
+    if (!algo) { $('#crkOut').innerHTML = `<div class="noflag">⚠️ ألصق هاش hex بطول 32 (MD5) أو 40 (SHA-1) أو 64 (SHA-256). SHA-512 غير مدعوم في الكسر — استخدم «فحص كلمات مرشحة».</div>`; return; }
+    const mode = crkMode();
+    let opts = { target, algo, mode };
+    if (mode === 'dict') {
+      const extra = $('#crkWords').value.split(/\r?\n/).map(w => w.trim()).filter(Boolean);
+      const words = [...new Set([...($('#crkCommon').checked ? KR.COMMON : []), ...extra])];
+      if (!words.length) { $('#crkOut').innerHTML = `<div class="noflag">أضف كلمات أو فعّل القائمة المدمجة.</div>`; return; }
+      opts.words = words; opts.mutate = $('#crkMut').checked;
+    } else {
+      opts.charset = $('#crkCharset').value; opts.minLen = +$('#crkMin').value || 1; opts.maxLen = Math.max(opts.minLen, +$('#crkMax').value || 1);
+    }
+    crkRunning = true; $('#crkBtn').textContent = '🔨 يكسر…'; $('#crkStop').hidden = false; $('#crkOut').innerHTML = '';
+    const t0 = performance.now();
+    const r = await KR.crack(opts, p => { $('#crkProg').innerHTML = `<span class="spinner"></span> جُرّب ${p.tried.toLocaleString('ar')} احتمال… (${Math.round(p.tried / (p.ms / 1000)).toLocaleString('ar')} / ثانية)`; });
+    crkRunning = false; $('#crkBtn').textContent = '🔨 ابدأ الكسر'; $('#crkStop').hidden = true; $('#crkProg').textContent = '';
+    if (r.error) { $('#crkOut').innerHTML = `<div class="noflag">⚠️ ${esc(r.error)}</div>`; return; }
+    if (r.found != null) {
+      $('#crkOut').innerHTML = `<div class="flags"><h2>🎉 تم الكسر!</h2><div class="flagrow"><code dir="ltr">${vis(r.found)}</code>${copyBtn(r.found)}<span class="how">${r.algo} · ${r.tried.toLocaleString('ar')} محاولة · ${ms(t0)} ملّي ثانية</span></div></div>`;
+      G.event('hashmatch');
+      const fl = C.findFlags(r.found); if (fl.length) G.onFlags([{ flag: fl[0], method: 'كسر الهاش' }]);
+    } else {
+      $('#crkOut').innerHTML = `<div class="noflag">🕵️ لم نجد الأصل بعد ${r.tried.toLocaleString('ar')} محاولة. ${mode === 'dict' ? 'جرّب القوة الغاشمة أو أضف كلمات.' : 'جرّب طولاً أكبر أو مجموعة رموز أوسع (سيستغرق وقتاً أطول).'}</div>`;
+    }
+  });
+  $('#crkStop').addEventListener('click', () => { if (KR.stop()) { crkRunning = false; $('#crkBtn').textContent = '🔨 ابدأ الكسر'; $('#crkStop').hidden = true; $('#crkProg').textContent = ''; $('#crkOut').innerHTML = `<div class="noflag">⏹️ أُوقف الكسر.</div>`; } });
 
   window.UI = { sendTo, setField, fillRSA, openBytes, showTab, copy };
   showTab(location.hash.slice(1) || 'scan');
