@@ -45,7 +45,7 @@
   });
 
   /* ---------- التبويبات ---------- */
-  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'python', 'train', 'cheat'];
+  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'python', 'modexp', 'train', 'cheat'];
   const TABNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش', scan: 'الفحص', file: 'التحليل', web: 'الويب' };
   function showTab(id) {
     if (!TABS.includes(id)) id = 'scan';
@@ -805,6 +805,72 @@
   $('#pyRun').addEventListener('click', pyRun);
 
   function openPython(name, bytes) { showTab('python'); pyBytes = bytes; $('#pyFile').innerHTML = `✅ <b dir="ltr">${esc(name)}</b> · ${fmtSize(bytes.length)} — متاح كـ <code dir="ltr">data</code>`; $('#pyCode').focus(); window.scrollTo(0, 0); }
+  /* ================= فك الأسّ النمطي / RSA ================= */
+  const meField = id => { const v = $(id).value.trim(); if (!v) return null; const n = C.parseBigFlexible(v); return n; };
+  function meToggleExtra() {
+    const t = $('#meType').value;
+    $('#meExtra').hidden = !(t === 'pq' || t === 'factors');
+    if (t === 'pq') { $('#mePlab').firstChild.textContent = 'p '; $('#meQlab').hidden = false; $('#meQlab').firstChild.textContent = 'q '; }
+    else if (t === 'factors') { $('#mePlab').firstChild.textContent = 'العوامل (مفصولة بفواصل، أو p^k) '; $('#meQlab').hidden = true; }
+  }
+  $('#meType').addEventListener('change', meToggleExtra); meToggleExtra();
+  $('#meSample').addEventListener('click', () => { $('#meN').value = '2^136+85'; $('#meE').value = '31337'; $('#meC').value = ''; $('#meType').value = 'prime'; meToggleExtra(); $('#meInfo').textContent = 'ضع قيمة c من الملف ثم اضغط فكّ. (n أوّلي، والرتبة = n−1)'; });
+  // determine the group order from n and the chosen type; returns {order, how} or {error} or {need}
+  function meOrder(n) {
+    const t = $('#meType').value;
+    if (t === 'prime') { if (!C.isProbablePrime(n)) return { warn: 'ملاحظة: n لا يبدو أوّلياً، لكن سأستخدم n−1 كما طلبت.', order: n - 1n, how: 'n−1 (قلت إنه أوّلي)' }; return { order: n - 1n, how: 'n−1 (n أوّلي ✓)' }; }
+    if (t === 'pq') { const p = meField('#meP'), q = meField('#meQ'); if (p == null || q == null) return { error: 'أدخل p و q.' }; if (p * q !== n) return { error: 'p·q لا يساوي n (p·q = ' + (p*q) + ').' }; if (!C.isProbablePrime(p) || !C.isProbablePrime(q)) return { warn: 'تحذير: p أو q لا يبدو أوّلياً.', order: (p-1n)*(q-1n), how: '(p−1)(q−1)' }; return { order: (p-1n)*(q-1n), how: '(p−1)(q−1)' }; }
+    if (t === 'factors') {
+      const raw = $('#meP').value.trim(); if (!raw) return { error: 'أدخل العوامل.' };
+      const fac = {}; let prod = 1n;
+      for (const part of raw.split(/[,\s]+/).filter(Boolean)) { const m = part.split('^'); const P = C.parseBigFlexible(m[0]); if (P == null) return { error: 'عامل غير صالح: ' + part }; const k = m[1] ? BigInt(m[1]) : 1n; fac[P] = (fac[P] || 0n) + k; prod *= P ** k; }
+      if (prod !== n) return { error: 'حاصل ضرب العوامل لا يساوي n (= ' + prod + ').' };
+      return { order: C.phiFromFactors(fac), how: 'φ(n) من العوامل' };
+    }
+    // auto
+    if (C.isProbablePrime(n)) return { order: n - 1n, how: 'n−1 (n أوّلي ✓)' };
+    const r = C.factorize(n, 1.2e6);
+    if (!r.factors) return { needFactors: true };
+    const fs = Object.entries(r.factors).map(([p, k]) => k > 1n ? p + '^' + k : p).join(' · ');
+    return { order: C.phiFromFactors(r.factors), how: 'φ(n) من التحليل: ' + fs };
+  }
+  function meShowSecret(h, m) {
+    const bytes = C.bigToBytes(m), txt = C.bytesToText(bytes), fl = C.findFlags(txt);
+    let out = h;
+    out += `<tr><th>secret (عشري)</th><td class="mono">${esc(m.toString())}</td><td>${copyBtn(m.toString())}</td></tr>`;
+    out += `<tr><th>secret (hex)</th><td class="mono">0x${esc(m.toString(16))}</td><td>${copyBtn('0x'+m.toString(16))}</td></tr>`;
+    out += `<tr><th>secret (نص)</th><td class="mono">${C.findFlags(txt).length ? '<b style=\"color:var(--mint)\">'+vis(txt)+'</b>' : vis(txt)}</td><td>${copyBtn(txt)}</td></tr>`;
+    return { rows: out, flag: fl[0] };
+  }
+  $('#meDec').addEventListener('click', () => {
+    const n = meField('#meN'), e = meField('#meE'), c = meField('#meC');
+    if (n == null || e == null || c == null) { $('#meOut').innerHTML = `<div class="noflag">⚠️ أدخل n و e و c (أرقام أو صيغ مثل 2^136+85).</div>`; return; }
+    if (c >= n) { $('#meOut').innerHTML = `<div class="noflag">⚠️ c أكبر من أو يساوي n — تحقّق من القيم.</div>`; return; }
+    const t0 = performance.now(), od = meOrder(n);
+    if (od.error) { $('#meOut').innerHTML = `<div class="noflag">⚠️ ${esc(od.error)}</div>`; return; }
+    if (od.needFactors) { $('#meOut').innerHTML = `<div class="noflag">🧮 n ليس أوّلياً ولم أستطع تحليله بسرعة. إن عرفت عوامله (مثلاً من factordb.com) اختر «عوامل معروفة» وأدخلها، أو «n = p·q».</div>`; return; }
+    const order = od.order, g = C.bgcd(((e % order) + order) % order, order);
+    let h = `<div class="card"><h3>🔓 النتيجة</h3><table><tr><th>الرتبة المستخدمة</th><td class="mono">${esc(od.how)}</td><td></td></tr>`;
+    if (g !== 1n) {
+      h += `</table><div class="tag warn" style="margin-top:8px">gcd(e, order) = ${esc(g.toString())} ≠ 1</div><div class="muted small-t" style="margin-top:6px">لا يوجد مقلوب فريد للأسّ، فهناك عدة جذور. هذا يحتاج خوارزمية جذر e-th (مثل Adleman–Manders–Miller) غير مدعومة هنا. إن كان e صغيراً جرّب «مساعد RSA» في تبويب الهاش للجذر الصحيح، أو قلّل المسألة يدوياً.</div></div>`;
+      $('#meOut').innerHTML = h; return;
+    }
+    const d = C.modinv(e, order), m = C.modpow(c, d, n), verify = C.modpow(m, e, n) === c;
+    h += `<tr><th>d = e⁻¹ mod order</th><td class="mono">${esc(d.toString())}</td><td>${copyBtn(d.toString())}</td></tr>`;
+    const r = meShowSecret(h, m);
+    let body = r.rows + `<tr><th>تحقّق</th><td>${verify ? '<span class="tag good">✅ secret^e mod n = c — صحيح</span>' : '<span class="tag bad">⚠️ لا يتطابق</span>'}</td><td></td></tr></table>`;
+    body += `<div class="btns">${copyBtn(m.toString(),'📋 نسخ العشري')}${sendBtn('scan', C.bytesToText(C.bigToBytes(m)), '🔎 افحص النص')}</div></div>`;
+    let full = r.flag ? renderFlags([{ flag: r.flag, method: 'فك أسّي (RSA، n أوّلي)' }]) : '';
+    full += body + `<div class="status">⏱️ ${ms(t0)} ملّي ثانية</div>`;
+    $('#meOut').innerHTML = full;
+  });
+  $('#meEnc').addEventListener('click', () => {
+    const n = meField('#meN'), e = meField('#meE'), m = meField('#meC');
+    if (n == null || e == null || m == null) { $('#meOut').innerHTML = `<div class="noflag">⚠️ أدخل n و e والرسالة m (في خانة c).</div>`; return; }
+    const c = C.modpow(((m % n) + n) % n, e, n);
+    $('#meOut').innerHTML = `<div class="card"><h3>🔒 التشفير</h3><table><tr><th>c = m^e mod n (عشري)</th><td class="mono">${esc(c.toString())}</td><td>${copyBtn(c.toString())}</td></tr><tr><th>c (hex)</th><td class="mono">0x${esc(c.toString(16))}</td><td>${copyBtn('0x'+c.toString(16))}</td></tr></table></div>`;
+  });
+
   window.UI = { sendTo, setField, fillRSA, openBytes, openPython, showTab, copy };
   showTab(location.hash.slice(1) || 'scan');
   updateCipherTools();

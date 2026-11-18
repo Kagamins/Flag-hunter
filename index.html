@@ -50,6 +50,7 @@
     <button data-tab="hash"><i>#️⃣</i>الهاش والأرقام</button>
     <button data-tab="web"><i>🌐</i>الويب</button>
     <button data-tab="python"><i>🐍</i>بايثون</button>
+    <button data-tab="modexp"><i>🔁</i>فك أسّي</button>
     <button data-tab="train" class="train-tab"><i>🎯</i>التدريب <span class="badge-count" id="trainCount">0/0</span></button>
     <button data-tab="cheat"><i>📖</i>الدليل السريع</button>
   </nav>
@@ -306,6 +307,39 @@
   <div id="pyOut"></div>
 </section>
 
+<!-- ================= MODEXP / RSA ================= -->
+<section id="modexp" class="panel">
+  <div class="hero me-hero">
+    <h1>🔁 فك الأسّ النمطي — RSA ومقلوب الأسّ</h1>
+    <p>لتحديات من نوع <code dir="ltr">ciphertext ≡ secret^e mod n</code>. يحسب رتبة الزمرة، ثم <code dir="ltr">d = e⁻¹ mod order</code>، ثم <code dir="ltr">secret = c^d mod n</code>، ويتحقّق بإعادة التشفير. تقبل الحقول صيغاً مثل <code dir="ltr">2^136+85</code> أو <code dir="ltr">0x…</code> أو رقماً عادياً.</p>
+  </div>
+  <div class="card">
+    <h2>المعطيات</h2>
+    <div class="grid2">
+      <label class="small-t">المعامل n (modulus) <input type="text" id="meN" dir="ltr" placeholder="مثال: 2^136+85" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">الأسّ e (exponent) <input type="text" id="meE" dir="ltr" placeholder="مثال: 31337" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">النص المشفّر c (ciphertext) <input type="text" id="meC" dir="ltr" placeholder="رقم أو 0x… — للتشفير ضع الرسالة m هنا" style="width:100%" spellcheck="false"></label>
+      <label class="small-t">نوع المعامل n <select id="meType" style="width:100%">
+        <option value="auto">تلقائي (اختبار أوّلية + تحليل بسيط)</option>
+        <option value="prime">n أوّلي (order = n−1)</option>
+        <option value="pq">n = p·q (أدخل p و q)</option>
+        <option value="factors">عوامل معروفة (أدخلها)</option>
+      </select></label>
+    </div>
+    <div class="grid2" id="meExtra" hidden>
+      <label class="small-t" id="mePlab">p <input type="text" id="meP" dir="ltr" style="width:100%" spellcheck="false"></label>
+      <label class="small-t" id="meQlab">q <input type="text" id="meQ" dir="ltr" style="width:100%" spellcheck="false"></label>
+    </div>
+    <div class="btns">
+      <button id="meDec" class="primary">🔓 فكّ (استخرج secret)</button>
+      <button id="meEnc">🔒 شفّر (c = m^e mod n)</button>
+      <button id="meSample" class="small">مثال التحدي</button>
+      <span id="meInfo" class="status"></span>
+    </div>
+  </div>
+  <div id="meOut"></div>
+</section>
+
 <!-- ================= TRAINING ================= -->
 <section id="train" class="panel">
   <div class="hero train-hero">
@@ -366,6 +400,7 @@
         <tr><td>رموز في شبكة / نقاط</td><td>Pigpen، برايل، الإشارات — dcode.fr</td></tr>
         <tr><td>أزواج أرقام / أرقام لوحة الهاتف</td><td>مربع بوليبيوس، لوحة الهاتف (T9)</td></tr>
         <tr><td>معطى n و e و c</td><td>RSA: حلّل n في factordb.com ← مساعد RSA</td></tr>
+        <tr><td>c = secret^e mod n ، و n أوّلي</td><td>تبويب «فك أسّي»: الرتبة = n−1 ، d = e⁻¹ mod(n−1)</td></tr>
         <tr><td>e = 3 ورسالة قصيرة</td><td>مساعد RSA يجرّب الجذر التكعيبي</td></tr>
       </table>
     </div>

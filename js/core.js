@@ -599,5 +599,66 @@
   C.modinv = (a, m) => { const [g, x] = C.egcd(((a % m) + m) % m, m); if (g !== 1n) return null; return ((x % m) + m) % m; };
   C.iroot = (n, k) => { if (n < 2n) return n; let lo = 0n, hi = 1n << (BigInt(n.toString(2).length) / k + 1n); while (lo < hi) { const mid = (lo + hi + 1n) / 2n; if (mid ** k <= n) lo = mid; else hi = mid - 1n; } return lo; };
 
+
+  /* ---------- number theory (primality, factoring, modular roots) ---------- */
+  C.babs = x => x < 0n ? -x : x;
+  C.bgcd = (a, b) => { a = C.babs(a); b = C.babs(b); while (b) { [a, b] = [b, a % b]; } return a; };
+  C.isProbablePrime = n => {
+    if (n < 2n) return false;
+    for (const p of [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n]) { if (n % p === 0n) return n === p; }
+    let d = n - 1n, r = 0n; while (d % 2n === 0n) { d /= 2n; r++; }
+    for (const a of [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n,41n]) {
+      if (a % n === 0n) continue;
+      let x = C.modpow(a, d, n);
+      if (x === 1n || x === n - 1n) continue;
+      let ok = false;
+      for (let i = 1n; i < r; i++) { x = x * x % n; if (x === n - 1n) { ok = true; break; } }
+      if (!ok) return false;
+    }
+    return true;
+  };
+  C.pollardRho = (n, budget = 1e6) => {
+    if (n % 2n === 0n) return 2n;
+    let steps = 0;
+    for (let c = 1n; c < 20n; c++) {
+      let x = 2n, y = 2n, d = 1n; const f = v => (v * v % n + c) % n;
+      while (d === 1n) { x = f(x); y = f(f(y)); d = C.bgcd(C.babs(x - y), n); if (++steps > budget) return null; }
+      if (d !== n) return d;
+    }
+    return null;
+  };
+  C.factorize = (n, budget = 1e6) => {
+    const factors = {}; const add = p => factors[p] = (factors[p] || 0n) + 1n; let m = n;
+    for (const p of [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n,41n,43n,47n]) while (m % p === 0n) { add(p); m /= p; }
+    const stack = m > 1n ? [m] : []; let guard = 0;
+    while (stack.length) {
+      const t = stack.pop(); if (t === 1n) continue;
+      if (C.isProbablePrime(t)) { add(t); continue; }
+      const d = C.pollardRho(t, budget);
+      if (d == null || d === t || ++guard > 300) return { factors: null, remaining: t };
+      stack.push(d, t / d);
+    }
+    return { factors };
+  };
+  C.phiFromFactors = f => { let phi = 1n; for (const [p, k] of Object.entries(f)) { const P = BigInt(p), K = BigInt(k); phi *= (P - 1n) * P ** (K - 1n); } return phi; };
+  C.evalBigExpr = s => {
+    const t = []; let i = 0; s = String(s).replace(/\s+/g, ''); if (!s) throw new Error('فارغ');
+    while (i < s.length) {
+      const c = s[i];
+      if (/[0-9]/.test(c) || (c === '0' && /x/i.test(s[i+1] || ''))) { let j = i; if (s.slice(i, i+2).toLowerCase() === '0x') { j = i + 2; while (j < s.length && /[0-9a-f]/i.test(s[j])) j++; } else { while (j < s.length && /[0-9]/.test(s[j])) j++; } t.push(BigInt(s.slice(i, j))); i = j; }
+      else if (/[a-f]/i.test(c) && /0x/i.test(s.slice(Math.max(0,i-1), i+1))) { throw new Error('رقم غير صالح'); }
+      else if (c === '*' && s[i+1] === '*') { t.push('^'); i += 2; }
+      else if ('+-*^()'.includes(c)) { t.push(c); i++; }
+      else throw new Error('رمز غير مدعوم: ' + c);
+    }
+    let pos = 0; const peek = () => t[pos];
+    const prim = () => { if (peek() === '(') { pos++; const v = add(); if (t[pos] !== ')') throw new Error('قوس ناقص'); pos++; return v; } if (peek() === '-') { pos++; return -prim(); } if (peek() === '+') { pos++; return prim(); } const v = peek(); if (typeof v !== 'bigint') throw new Error('رقم متوقع'); pos++; return v; };
+    const pow = () => { const b = prim(); if (peek() === '^') { pos++; return b ** pow(); } return b; };
+    const mul = () => { let v = pow(); while (peek() === '*') { pos++; v *= pow(); } return v; };
+    const add = () => { let v = mul(); while (peek() === '+' || peek() === '-') { const op = t[pos++]; const r = mul(); v = op === '+' ? v + r : v - r; } return v; };
+    const r = add(); if (pos !== t.length) throw new Error('تعبير غير صالح'); return r;
+  };
+  C.parseBigFlexible = s => { s = String(s).trim(); if (!s) return null; if (/^-?\d+$/.test(s)) return BigInt(s); if (/^0x[0-9a-f]+$/i.test(s)) return BigInt(s); try { return C.evalBigExpr(s); } catch (e) { return null; } };
+
   return C;
 });
