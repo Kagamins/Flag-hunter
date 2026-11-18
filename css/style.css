@@ -231,3 +231,11 @@ footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 22
 .pyres { background: #0b0f14; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
 .pyres pre { white-space: pre-wrap; word-break: break-word; }
 .pyerr { color: #ffb3bd; }
+
+/* ---------- line-numbered editor ---------- */
+.editor { display: flex; background: #0b0f14; border: 2px solid var(--line); border-radius: 10px; overflow: hidden; height: 360px; direction: ltr; }
+.editor:focus-within { border-color: var(--sky); box-shadow: 0 0 0 3px #5ac8fa33; }
+.editor .gutter { flex: none; overflow: hidden; background: #0e1424; border-inline-end: 1px solid var(--line); padding: 10px 8px; min-width: 42px; }
+.editor .gutter-inner { font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #5f6b85; text-align: right; white-space: pre; will-change: transform; }
+.editor textarea#pyCode { flex: 1; height: 100%; border: 0 !important; border-radius: 0; background: transparent; box-shadow: none !important; outline: none; margin: 0; resize: none; white-space: pre; overflow: auto; padding: 10px; font-size: 13px; line-height: 1.6; }
+.editor.dragover { border-color: var(--mint); box-shadow: 0 0 0 3px #3ddc9733; }

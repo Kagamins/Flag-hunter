@@ -699,20 +699,48 @@
 
   /* ================= بايثون (Pyodide) ================= */
   let pyBytes = null, pyLoadingShown = false;
+  const pyGutter = $('#pyGutter');
+  function pyNums() {
+    const n = $('#pyCode').value.split('\n').length;
+    let t = ''; for (let i = 1; i <= n; i++) t += i + '\n';
+    pyGutter.textContent = t;
+    pyGutter.style.transform = `translateY(${-$('#pyCode').scrollTop}px)`;
+  }
+  $('#pyCode').addEventListener('scroll', () => { pyGutter.style.transform = `translateY(${-$('#pyCode').scrollTop}px)`; });
+  $('#pyCode').addEventListener('input', pyNums);
   $('#pyCode').value = PY.TEMPLATE;
+  pyNums();
   $('#pySnip').innerHTML = '<option value="">اختر عملية عكسية شائعة…</option>' + Object.keys(PY.SNIPPETS).map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
   $('#pySnip').addEventListener('change', e => {
     const k = e.target.value; if (!k) return;
     const ta = $('#pyCode'), add = PY.SNIPPETS[k];
     ta.value = ta.value.replace(/\s*$/, '') + '\n\n' + add + '\n';
-    e.target.value = ''; ta.focus(); ta.scrollTop = ta.scrollHeight;
+    e.target.value = ''; ta.focus(); ta.scrollTop = ta.scrollHeight; pyNums();
   });
-  setupDrop($('#pyDrop'), async f => { pyBytes = await readFile(f); $('#pyFile').innerHTML = `✅ <b dir="ltr">${esc(f.name)}</b> · ${fmtSize(pyBytes.length)} — متاح كـ <code dir="ltr">data</code>`; });
+  const readText = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsText(f); });
+  function pyLoadScript(name, text) {
+    $('#pyCode').value = text.replace(/\r\n/g, '\n'); pyNums(); $('#pyOut').innerHTML = '';
+    $('#pyFile').innerHTML = `📜 <b dir="ltr">${esc(name)}</b> حُمِّل في المحرّر` + (pyBytes ? ` · الملف المشفّر لا يزال متاحاً كـ <code dir="ltr">data</code>` : '');
+    toast('تم تحميل السكربت 📜'); $('#pyCode').focus();
+  }
+  async function pyAddFile(f) {
+    if (/\.py$/i.test(f.name) || f.type === 'text/x-python') { pyLoadScript(f.name, await readText(f)); return; }
+    pyBytes = await readFile(f); $('#pyFile').innerHTML = `✅ <b dir="ltr">${esc(f.name)}</b> · ${fmtSize(pyBytes.length)} — متاح كـ <code dir="ltr">data</code>`;
+  }
+  setupDrop($('#pyDrop'), pyAddFile);
+  // explicit 'load .py' button
+  $('#pyLoad').addEventListener('click', () => $('#pyScriptInput').click());
+  $('#pyScriptInput').addEventListener('change', async e => { const f = e.target.files[0]; if (f) pyLoadScript(f.name, await readText(f)); e.target.value = ''; });
+  // drop a .py directly onto the editor
+  const pyEd = $('#pyEditor');
+  pyEd.addEventListener('dragover', e => { e.preventDefault(); pyEd.classList.add('dragover'); });
+  pyEd.addEventListener('dragleave', () => pyEd.classList.remove('dragover'));
+  pyEd.addEventListener('drop', async e => { e.preventDefault(); e.stopPropagation(); pyEd.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) { if (/\.(py|txt)$/i.test(f.name) || /^text\//.test(f.type)) pyLoadScript(f.name, await readText(f)); else pyAddFile(f); } });
   // Ctrl+Enter / Tab inside the editor
   $('#pyCode').addEventListener('keydown', e => {
-    if (e.key === 'Tab') { e.preventDefault(); const t = e.target, st = t.selectionStart, en = t.selectionEnd; t.value = t.value.slice(0, st) + '    ' + t.value.slice(en); t.selectionStart = t.selectionEnd = st + 4; }
+    if (e.key === 'Tab') { e.preventDefault(); const t = e.target, st = t.selectionStart, en = t.selectionEnd; t.value = t.value.slice(0, st) + '    ' + t.value.slice(en); t.selectionStart = t.selectionEnd = st + 4; pyNums(); }
   });
-  $('#pyReset').addEventListener('click', () => { $('#pyCode').value = PY.TEMPLATE; $('#pyOut').innerHTML = ''; });
+  $('#pyReset').addEventListener('click', () => { $('#pyCode').value = PY.TEMPLATE; $('#pyOut').innerHTML = ''; pyNums(); });
   function pyCleanTrace(err) {
     if (!err || !err.trim()) return '';
     const lines = err.replace(/\s+$/, '').split('\n');

@@ -288,8 +288,8 @@
   </div>
   <div class="grid2">
     <div class="card">
-      <h3>📎 الملف المشفّر (اختياري)</h3>
-      <div class="drop" id="pyDrop" style="min-height:90px"><div class="drop-icon" style="font-size:28px">📄</div><b>اسحب الملف المشفّر</b><p class="muted small-t">سيكون متاحاً في بايثون كـ <code dir="ltr">data</code></p><input type="file" hidden></div>
+      <h3>📎 الملفات (اختياري)</h3>
+      <div class="drop" id="pyDrop" style="min-height:90px"><div class="drop-icon" style="font-size:28px">📄</div><b>اسحب الملف المشفّر أو سكربت .py</b><p class="muted small-t">ملف مشفّر ← متاح كـ <code dir="ltr">data</code> · ملف <code dir="ltr">.py</code> ← يُفتح في المحرّر</p><input type="file" hidden></div>
       <div id="pyFile" class="status"></div>
     </div>
     <div class="card">
@@ -300,8 +300,8 @@
   </div>
   <div class="card">
     <h3>📝 الكود</h3>
-    <textarea id="pyCode" dir="ltr" spellcheck="false" style="min-height:220px"></textarea>
-    <div class="btns"><button id="pyRun" class="primary">▶️ شغّل <span class="kbd">Ctrl+Enter</span></button><button id="pyReset">🔄 القالب</button><span id="pyStatus" class="status"></span></div>
+    <div class="editor" id="pyEditor"><div class="gutter"><div class="gutter-inner" id="pyGutter">1</div></div><textarea id="pyCode" dir="ltr" wrap="off" spellcheck="false"></textarea></div>
+    <div class="btns"><button id="pyRun" class="primary">▶️ شغّل <span class="kbd">Ctrl+Enter</span></button><button id="pyLoad">📜 حمّل سكربت .py</button><input type="file" id="pyScriptInput" accept=".py,.txt,text/*" hidden><button id="pyReset">🔄 القالب</button><span id="pyStatus" class="status"></span></div>
   </div>
   <div id="pyOut"></div>
 </section>
