@@ -1,7 +1,7 @@
 /* صائد الأعلام — واجهة الأدوات */
 (function () {
   'use strict';
-  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW;
+  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW, JF = window.CTFJ;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -117,12 +117,14 @@
     const deep = C.deepFlagSearch(t), ident = C.identify(t);
     const magic = t.length <= 20000 ? C.magic(t.trim(), { depth: 6, maxNodes: 1500 }) : null;
     let h = renderFlags(deep.flags);
-    if (!deep.flags.length) h += `<div class="noflag">🕵️ لم نجد صيغة علم${C.settings.prefix ? ' لـ <code>' + esc(C.settings.prefix) + '{…}</code>' : ''} بعد. انظر إلى التعرّف وعمليات الفك بالأسفل.</div>`;
+    if (!deep.flags.length && !JF.isJSFuck(t)) h += `<div class="noflag">🕵️ لم نجد صيغة علم${C.settings.prefix ? ' لـ <code>' + esc(C.settings.prefix) + '{…}</code>' : ''} بعد. انظر إلى التعرّف وعمليات الفك بالأسفل.</div>`;
     if (deep.hints.length) h += `<div class="card"><h3>👀 لمحنا بادئة علم مرمّزة!</h3>` + deep.hints.map(x => `<div>تبدو مثل <b dir="ltr">${esc(x.prefix)}{</b> مرمّزة بـ <span class="tag">${esc(x.encoding)}</span> عند الموضع ${x.offset}: <code>${esc(x.sig)}</code></div>`).join('') + `<div class="muted small-t">خذ البيانات حول هذا الموضع وفكّها في تبويب فك الترميز.</div></div>`;
     if (ident.length) h += `<div class="card"><h3>🔬 ماذا يشبه هذا؟</h3><ul class="idlist">` + ident.map(i => `<li><b>${esc(i.kind)}</b> <span class="muted">${vis(i.detail)}</span> ${sendBtn(i.tool, t.trim(), 'افتح في ' + (TABNAME[i.tool] || ''))}</li>`).join('') + `</ul></div>`;
     if (magic && magic.outputs.length) h += `<div class="card"><h3>✨ أفضل عمليات الفك التلقائي</h3>` + magic.outputs.slice(0, 6).map(o => resRow(o.chain.join(' → '), o.s, C.findFlags(o.s).length, sendBtn('decode', o.s, 'تابِع ←'))).join('') + `</div>`;
     h += `<div class="status">⏱️ فُحص ${t.length.toLocaleString('ar')} حرف في ${ms(t0)} ملّي ثانية</div>`;
+    if (JF.isJSFuck(t)) h = `<div id="scanJsf"><div class="card"><span class="spinner"></span> 🤡 هذا JSFuck — نفكّه بأمان…</div></div>` + h;
     out.innerHTML = h;
+    if (JF.isJSFuck(t)) jsfDecode(t).then(r => { const el = $('#scanJsf'); if (el && $('#scanText').value === t) el.innerHTML = jsfRender(r, true); });
   }
   $('#scanText').addEventListener('input', debounce(() => scanText(false), 350));
   $('#scanBtn').addEventListener('click', () => scanText(true));
@@ -220,6 +222,7 @@
   function runMagic() {
     const t = $('#decIn').value.trim(), out = $('#decMagicOut');
     if (!t) { out.innerHTML = ''; return; }
+    if (JF.isJSFuck(t)) { out.innerHTML = `<div class="noflag">🤡 هذا JSFuck — حوّلناه إلى أداة فك JSFuck بالأسفل.</div>`; $('#jsfIn').value = t; runJsf(); $('#jsfCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const t0 = performance.now();
     const r = C.magic(t, { depth: +$('#decDepth').value, maxNodes: 4000, top: 15 });
     let h = renderFlags(r.flags.map(f => ({ flag: f.flag, method: f.chain.join(' → ') || 'مباشر' })));
@@ -228,7 +231,7 @@
     resetRecipe();
   }
   $('#decMagic').addEventListener('click', runMagic);
-  $('#decIn').addEventListener('input', debounce(() => { if ($('#decIn').value.length < 20000) runMagic(); }, 400));
+  $('#decIn').addEventListener('input', debounce(() => { const v = $('#decIn').value; if (v.length < 20000 || JF.isJSFuck(v)) runMagic(); }, 400));
   $('#decMagicOut').addEventListener('click', e => { const b = e.target.closest('[data-apply]'); if (!b) return; const o = store.get(b.dataset.apply); recipe = { base: $('#decIn').value.trim(), steps: [...o.chain] }; history2 = [o.s]; renderRecipe(o.s); $('#decOps').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 
   const OPS = [
@@ -551,6 +554,30 @@
     if (!d && !(e <= 17n)) rows.push(['الخطوة التالية', 'حلّل n أولاً (factordb.com) ثم أدخل p و q']);
     show();
   });
+
+  /* ================= JSFuck ================= */
+  const jsfDecode = t => JF.deobfuscate(t);
+  function jsfRender(r, compact) {
+    const out = r.output || '';
+    if (!out && r.error) return `<div class="noflag">⚠️ تعذّر الفك: ${esc(r.error)}</div>`;
+    const layers = r.layers.length, captured = r.layers.some(l => l.payloads.length);
+    const fl = C.deepFlagSearch(out).flags.filter(f => f.likely !== false).map(f => ({ ...f, method: 'JSFuck' + (layers > 1 ? ' ×' + layers : '') + ' · ' + f.method }));
+    let h = renderFlags(fl);
+    h += `<div class="card"><h3>🤡 نتيجة فك JSFuck</h3><div class="btns" style="margin-top:0">${layers > 1 ? `<span class="tag">${layers} طبقات</span>` : ''}<span class="tag ${captured ? 'warn' : 'good'}">${captured ? '🛡️ كود مُلتقط — لم يُشغَّل' : 'نص ناتج'}</span>${r.layers[0].via === 'page' ? '<span class="tag">داخل الصفحة</span>' : ''}</div>
+      <div class="out" style="margin-top:8px"><pre>${vis(C.preview(out, 20000))}</pre></div>
+      <div class="btns">${copyBtn(out, '📋 نسخ الكود')}${sendBtn('scan', out, '🔎 افحص الناتج')}${compact ? '' : sendBtn('decode', out, '🧩 فك الناتج')}</div></div>`;
+    return h;
+  }
+  async function runJsf() {
+    const t = $('#jsfIn').value.trim(); if (!t) { $('#jsfOut').innerHTML = ''; $('#jsfInfo').textContent = ''; return; }
+    if (!JF.CHARSET.test(t)) { $('#jsfInfo').textContent = '⚠️ ليس JSFuck: المسموح فقط [ ] ( ) ! + والمسافات'; $('#jsfOut').innerHTML = ''; return; }
+    $('#jsfInfo').innerHTML = '<span class="spinner"></span> نفك…'; const t0 = performance.now();
+    const r = await jsfDecode(t);
+    $('#jsfInfo').textContent = `⏱️ ${ms(t0)} ملّي ثانية · ${t.length.toLocaleString('ar')} رمز`;
+    $('#jsfOut').innerHTML = jsfRender(r, false);
+  }
+  $('#jsfBtn').addEventListener('click', runJsf);
+  $('#jsfIn').addEventListener('input', debounce(runJsf, 500));
 
   /* ================= الويب ================= */
   function kvTable(rows, title, withDecode = true) {

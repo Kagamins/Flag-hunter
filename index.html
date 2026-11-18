@@ -102,6 +102,13 @@
       <span id="decOutInfo" class="muted small-t"></span>
     </div>
   </div>
+  <div class="card" id="jsfCard">
+    <h2>🤡 فك JSFuck <span class="muted small-t">— كود JavaScript مكتوب فقط بالرموز [ ] ( ) ! +</span></h2>
+    <textarea id="jsfIn" dir="ltr" placeholder="[][(![]+[])[+[]]+([![]]+[][[]])[+!+[]+[+[]]]+(![]+[])[!+[]+!+[]]+…" spellcheck="false"></textarea>
+    <div class="btns"><button id="jsfBtn" class="primary">🔓 فك JSFuck</button><button data-clear="jsfIn">مسح</button><span id="jsfInfo" class="status"></span></div>
+    <div id="jsfOut"></div>
+    <div class="muted small-t" style="margin-top:6px">🛡️ آمن: الكود المخفي يُلتقط كنص ولا يُشغَّل أبداً. الفك يعمل داخل Worker معزول مع مهلة 5 ثوانٍ، ويفك الطبقات المتداخلة تلقائياً.</div>
+  </div>
 </section>
 
 <!-- ================= CIPHERS ================= -->
@@ -293,6 +300,7 @@
         <tr><td>&amp;#65; &amp;#x41;</td><td>كيانات HTML</td></tr>
         <tr><td>.- -... / …</td><td>شيفرة مورس</td></tr>
         <tr><td>+++[&gt;++&lt;-]&gt;.</td><td>Brainfuck (فك الترميز ← تشغيل)</td></tr>
+        <tr><td>فقط [ ] ( ) ! +</td><td>JSFuck (فك الترميز ← فك JSFuck)</td></tr>
         <tr><td>eyJ… . eyJ… . xxx</td><td>JWT (تبويب الهاش يفكّه)</td></tr>
         <tr><td>رقم عشري ضخم واحد</td><td>رقم ← بايتات (محوّل الأرقام)</td></tr>
         <tr><td>Ook. Ook? / رموز تعبيرية / أشكال</td><td>لغات غريبة — جرّب "cipher identifier" في dcode.fr</td></tr>
@@ -453,6 +461,7 @@
 <script src="js/core.js"></script>
 <script src="js/forensics.js"></script>
 <script src="js/web.js"></script>
+<script src="js/jsfuck.js"></script>
 <script src="js/missions.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>

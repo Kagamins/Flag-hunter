@@ -20,6 +20,7 @@
     { id: 'png', icon: '🩹', name: 'طبيب الصور', desc: 'أصلح أبعاد صورة PNG معدّلة' },
     { id: 'audio', icon: '🎧', name: 'أذن ذهبية', desc: 'افتح المخطط الطيفي لملف صوتي' },
     { id: 'webdet', icon: '🕸️', name: 'محقق الويب', desc: 'اعثر على علم داخل طلب أو استجابة HTTP' },
+    { id: 'jsf', icon: '🤡', name: 'مروّض JSFuck', desc: 'افكك كود JSFuck واكشف ما يخفيه' },
     { id: 'hash', icon: '🧂', name: 'صائد الهاشات', desc: 'طابق هاشاً مع كلمته الأصلية' },
     { id: 'rsa', icon: '🔑', name: 'كاسر RSA', desc: 'فك رسالة RSA' },
     { id: 'explorer', icon: '🧭', name: 'المستكشف', desc: 'استخدم الأدوات الست كلها' },
@@ -27,7 +28,7 @@
     { id: 'm5', icon: '⭐', name: 'خمس مهمات', desc: 'حلّ 5 مهمات تدريبية' },
     { id: 'mall', icon: '👑', name: 'بطل التدريب', desc: 'حلّ كل مهمات التدريب' },
   ];
-  const MISSION_BADGE = { caesar: 'caesar', onion: 'layers', xor: 'xor', lsb: 'pixels', exif: 'meta', zip: 'archive', png: 'png', audio: 'audio', hash: 'hash', rsa: 'rsa', web: 'webdet' };
+  const MISSION_BADGE = { caesar: 'caesar', onion: 'layers', xor: 'xor', lsb: 'pixels', exif: 'meta', zip: 'archive', png: 'png', audio: 'audio', hash: 'hash', rsa: 'rsa', web: 'webdet', jsf: 'jsf' };
   const MISSIONS = window.CTF_MISSIONS || [];
 
   const def = () => ({ xp: 0, flags: [], tools: [], badges: [], solved: {}, hints: {}, name: '', toolXp: 0 });
@@ -99,6 +100,7 @@
       if (/ZIP/.test(m)) badge('archive');
       if (/XOR|المفتاح 0x/.test(m)) badge('xor');
       if (/^HTTP/.test(m)) badge('webdet');
+      if (/^JSFuck/.test(m)) badge('jsf');
     }
     if (!st.flags.length) return;
     save();
