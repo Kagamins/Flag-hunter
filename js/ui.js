@@ -1,7 +1,7 @@
 /* صائد الأعلام — واجهة الأدوات */
 (function () {
   'use strict';
-  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW, JF = window.CTFJ, KR = window.CTFK;
+  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW, JF = window.CTFJ, KR = window.CTFK, PY = window.CTFP;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -45,7 +45,7 @@
   });
 
   /* ---------- التبويبات ---------- */
-  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'train', 'cheat'];
+  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'python', 'train', 'cheat'];
   const TABNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش', scan: 'الفحص', file: 'التحليل', web: 'الويب' };
   function showTab(id) {
     if (!TABS.includes(id)) id = 'scan';
@@ -58,10 +58,10 @@
   $$('#tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
   window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
   document.addEventListener('keydown', e => {
-    if (e.altKey && e.key >= '1' && e.key <= '8') { e.preventDefault(); showTab(TABS[+e.key - 1]); }
+    if (e.altKey && e.key >= '1' && e.key <= '9') { e.preventDefault(); showTab(TABS[+e.key - 1]); }
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       const id = $('.panel.active').id; e.preventDefault();
-      ({ scan: () => scanText(true), decode: runMagic, cipher: runAllCiphers, web: runWeb })[id]?.();
+      ({ scan: () => scanText(true), decode: runMagic, cipher: runAllCiphers, web: runWeb, python: () => pyRun() })[id]?.();
     }
   });
   function sendTo(tab, text) {
@@ -697,7 +697,69 @@
   });
   $('#crkStop').addEventListener('click', () => { if (KR.stop()) { crkRunning = false; $('#crkBtn').textContent = '🔨 ابدأ الكسر'; $('#crkStop').hidden = true; $('#crkProg').textContent = ''; $('#crkOut').innerHTML = `<div class="noflag">⏹️ أُوقف الكسر.</div>`; } });
 
-  window.UI = { sendTo, setField, fillRSA, openBytes, showTab, copy };
+  /* ================= بايثون (Pyodide) ================= */
+  let pyBytes = null, pyLoadingShown = false;
+  $('#pyCode').value = PY.TEMPLATE;
+  $('#pySnip').innerHTML = '<option value="">اختر عملية عكسية شائعة…</option>' + Object.keys(PY.SNIPPETS).map(k => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+  $('#pySnip').addEventListener('change', e => {
+    const k = e.target.value; if (!k) return;
+    const ta = $('#pyCode'), add = PY.SNIPPETS[k];
+    ta.value = ta.value.replace(/\s*$/, '') + '\n\n' + add + '\n';
+    e.target.value = ''; ta.focus(); ta.scrollTop = ta.scrollHeight;
+  });
+  setupDrop($('#pyDrop'), async f => { pyBytes = await readFile(f); $('#pyFile').innerHTML = `✅ <b dir="ltr">${esc(f.name)}</b> · ${fmtSize(pyBytes.length)} — متاح كـ <code dir="ltr">data</code>`; });
+  // Ctrl+Enter / Tab inside the editor
+  $('#pyCode').addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); const t = e.target, st = t.selectionStart, en = t.selectionEnd; t.value = t.value.slice(0, st) + '    ' + t.value.slice(en); t.selectionStart = t.selectionEnd = st + 4; }
+  });
+  $('#pyReset').addEventListener('click', () => { $('#pyCode').value = PY.TEMPLATE; $('#pyOut').innerHTML = ''; });
+  function pyCleanTrace(err) {
+    if (!err || !err.trim()) return '';
+    const lines = err.replace(/\s+$/, '').split('\n');
+    const out = []; let skipHdr = true;
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (/\/lib\/python[\d.]*\.zip|_pyodide[\/\\]_base\.py|site-packages[\/\\]_pyodide/.test(l)) { if (i + 1 < lines.length && /^\s/.test(lines[i + 1])) i++; continue; }
+      if (/^\s*(await CodeRunner\(|\.run_async\(|coroutine = eval\(|\.{3}<\d+ lines>\.{3})/.test(l)) continue;
+      if (skipHdr && /^Traceback/.test(l)) { out.push(l); skipHdr = false; continue; }
+      out.push(l);
+    }
+    let r = out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    if (/^Traceback/.test(r) && !/File "<exec>"/.test(r)) r = r.replace(/^Traceback.*?\n/, '');
+    return r;
+  }
+  async function pyRun() {
+    const code = $('#pyCode').value; if (!code.trim()) return;
+    const btn = $('#pyRun'); if (btn.disabled) return;
+    btn.disabled = true;
+    if (!PY.loaded()) {
+      const t0 = performance.now();
+      $('#pyStatus').innerHTML = '<span class="spinner"></span> تحميل محرك بايثون (~13 ميغابايت) لأول مرة…';
+      let timer = setInterval(() => { $('#pyStatus').innerHTML = `<span class="spinner"></span> تحميل محرك بايثون… ${Math.round((performance.now() - t0) / 1000)} ثانية`; }, 500);
+      try { await PY.init(stage => { if (stage === 'cdn') $('#pyStatus').innerHTML = '<span class="spinner"></span> المحلي غير متاح، نجرّب الإنترنت (CDN)…'; }); }
+      catch (e) { clearInterval(timer); btn.disabled = false; $('#pyStatus').textContent = ''; $('#pyOut').innerHTML = `<div class="noflag">⚠️ تعذّر تحميل محرك بايثون. على GitHub Pages أو النسخة المحمّلة يعمل بلا إنترنت؛ في المعاينة قد يحتاج اتصالاً. (${esc(e.message || '')})</div>`; return; }
+      clearInterval(timer);
+    }
+    $('#pyStatus').innerHTML = '<span class="spinner"></span> يشغّل…'; const t0 = performance.now();
+    const r = await PY.run(code, pyBytes);
+    btn.disabled = false; $('#pyStatus').textContent = `⏱️ ${ms(t0)} ملّي ثانية`;
+    if (r.error) { $('#pyOut').innerHTML = `<div class="noflag">⚠️ ${esc(r.error)}</div>`; return; }
+    const combined = (r.stdout || '') + (r.result && r.result !== 'None' ? '\n' + r.result : '');
+    const flags = C.deepFlagSearch(combined).flags.filter(f => f.likely !== false).map(f => ({ ...f, method: 'بايثون · ' + f.method }));
+    let h = renderFlags(flags);
+    h += `<div class="card"><h3>📤 الناتج</h3>`;
+    if (r.stdout && r.stdout.trim()) h += `<div class="pyres"><pre>${vis(r.stdout)}</pre></div>`;
+    if (r.result && r.result !== 'None') h += `<div class="muted small-t" style="margin-top:6px">قيمة آخر تعبير:</div><div class="pyres"><pre>${vis(r.result)}</pre></div>`;
+    if (!((r.stdout && r.stdout.trim()) || (r.result && r.result !== 'None')) && !(r.stderr && r.stderr.trim())) h += `<div class="muted">(لا مخرجات — استخدم print())</div>`;
+    const cleanErr = pyCleanTrace(r.stderr);
+    if (cleanErr) h += `<div class="muted small-t" style="margin-top:6px">أخطاء / تتبّع:</div><div class="pyres pyerr"><pre>${vis(cleanErr)}</pre></div>`;
+    h += `<div class="btns">${combined.trim() ? copyBtn(combined.trim(), '📋 نسخ الناتج') + sendBtn('scan', combined, '🔎 افحص الناتج') : ''}</div></div>`;
+    $('#pyOut').innerHTML = h;
+  }
+  $('#pyRun').addEventListener('click', pyRun);
+
+  function openPython(name, bytes) { showTab('python'); pyBytes = bytes; $('#pyFile').innerHTML = `✅ <b dir="ltr">${esc(name)}</b> · ${fmtSize(bytes.length)} — متاح كـ <code dir="ltr">data</code>`; $('#pyCode').focus(); window.scrollTo(0, 0); }
+  window.UI = { sendTo, setField, fillRSA, openBytes, openPython, showTab, copy };
   showTab(location.hash.slice(1) || 'scan');
   updateCipherTools();
 })();

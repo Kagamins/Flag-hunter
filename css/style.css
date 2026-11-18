@@ -223,3 +223,11 @@ footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 22
 .diff .dl.same { color: var(--muted); }
 .diff mark { background: var(--gold); color: #1a1240; border-radius: 3px; padding: 0 1px; }
 .diff .sig { display: inline-block; width: 16px; font-weight: 800; }
+
+/* ---------- python tab ---------- */
+.py-hero { background: linear-gradient(135deg, #2b5f3f, #1f3a6b); }
+.py-hero::after { content: "🐍"; }
+#pyCode { tab-size: 4; line-height: 1.5; }
+.pyres { background: #0b0f14; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.pyres pre { white-space: pre-wrap; word-break: break-word; }
+.pyerr { color: #ffb3bd; }

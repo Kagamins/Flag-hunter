@@ -20,6 +20,7 @@
     { id: 'png', icon: '🩹', name: 'طبيب الصور', desc: 'أصلح أبعاد صورة PNG معدّلة' },
     { id: 'audio', icon: '🎧', name: 'أذن ذهبية', desc: 'افتح المخطط الطيفي لملف صوتي' },
     { id: 'webdet', icon: '🕸️', name: 'محقق الويب', desc: 'اعثر على علم داخل طلب أو استجابة HTTP' },
+    { id: 'pyrev', icon: '🐍', name: 'مهندس عكسي', desc: 'اعكس سكربت تشفير بايثون لاستخراج العلم' },
     { id: 'jsf', icon: '🤡', name: 'مروّض JSFuck', desc: 'افكك كود JSFuck واكشف ما يخفيه' },
     { id: 'hash', icon: '🧂', name: 'صائد الهاشات', desc: 'طابق هاشاً مع كلمته الأصلية' },
     { id: 'rsa', icon: '🔑', name: 'كاسر RSA', desc: 'فك رسالة RSA' },
@@ -28,7 +29,7 @@
     { id: 'm5', icon: '⭐', name: 'خمس مهمات', desc: 'حلّ 5 مهمات تدريبية' },
     { id: 'mall', icon: '👑', name: 'بطل التدريب', desc: 'حلّ كل مهمات التدريب' },
   ];
-  const MISSION_BADGE = { caesar: 'caesar', onion: 'layers', xor: 'xor', lsb: 'pixels', exif: 'meta', zip: 'archive', png: 'png', audio: 'audio', hash: 'hash', rsa: 'rsa', web: 'webdet', jsf: 'jsf' };
+  const MISSION_BADGE = { caesar: 'caesar', onion: 'layers', xor: 'xor', lsb: 'pixels', exif: 'meta', zip: 'archive', png: 'png', audio: 'audio', hash: 'hash', rsa: 'rsa', web: 'webdet', jsf: 'jsf', pyrev: 'pyrev' };
   const MISSIONS = window.CTF_MISSIONS || [];
 
   const def = () => ({ xp: 0, flags: [], tools: [], badges: [], solved: {}, hints: {}, name: '', toolXp: 0 });
@@ -185,7 +186,8 @@
     const card = btn.closest('.mission'), m = MISSIONS.find(x => x.id === card.dataset.mid), UI = window.UI;
     const act = btn.dataset.act;
     if (act === 'open') {
-      if (m.fileData) UI.openBytes(m.file, b64ToBytes(m.fileData));
+      if (m.fileData && m.tool === 'python') UI.openPython(m.file, b64ToBytes(m.fileData));
+      else if (m.fileData) UI.openBytes(m.file, b64ToBytes(m.fileData));
       else if (m.rsa) UI.fillRSA(m.rsa);
       else if (m.id === 'big') UI.setField('nmIn', m.data, 'hash');
       else if (m.id === 'hash') UI.setField('hwHash', m.data, 'hash');

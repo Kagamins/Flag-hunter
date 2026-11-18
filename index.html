@@ -49,6 +49,7 @@
     <button data-tab="file"><i>🗂️</i>تحليل الملفات</button>
     <button data-tab="hash"><i>#️⃣</i>الهاش والأرقام</button>
     <button data-tab="web"><i>🌐</i>الويب</button>
+    <button data-tab="python"><i>🐍</i>بايثون</button>
     <button data-tab="train" class="train-tab"><i>🎯</i>التدريب <span class="badge-count" id="trainCount">0/0</span></button>
     <button data-tab="cheat"><i>📖</i>الدليل السريع</button>
   </nav>
@@ -279,6 +280,32 @@
   </div>
 </section>
 
+<!-- ================= PYTHON ================= -->
+<section id="python" class="panel">
+  <div class="hero py-hero">
+    <h1>🐍 مختبر بايثون — اعكس سكربتات التشفير</h1>
+    <p>بايثون حقيقي داخل متصفحك. ألصق سكربت التشفير المُعطى لفهمه، ارفع الملف المشفّر، واكتب فكّ التشفير شغّله هنا. يعمل بدون إنترنت بعد أول تحميل. <b>لا يوجد زر سحري يعكس أي سكربت</b> — الأداة تعطيك بيئة بايثون، وأنت تكتب العملية العكسية.</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>📎 الملف المشفّر (اختياري)</h3>
+      <div class="drop" id="pyDrop" style="min-height:90px"><div class="drop-icon" style="font-size:28px">📄</div><b>اسحب الملف المشفّر</b><p class="muted small-t">سيكون متاحاً في بايثون كـ <code dir="ltr">data</code></p><input type="file" hidden></div>
+      <div id="pyFile" class="status"></div>
+    </div>
+    <div class="card">
+      <h3>🧩 قصاصات جاهزة <span class="muted small-t">— تُضاف إلى الكود</span></h3>
+      <select id="pySnip" style="width:100%"><option value="">اختر عملية عكسية شائعة…</option></select>
+      <div class="muted small-t" style="margin-top:8px">المتغيّرات الجاهزة: <code dir="ltr">data</code> (bytes) و <code dir="ltr">data_hex</code> (str). اطبع النتيجة بـ <code dir="ltr">print()</code>. المكتبة القياسية متاحة (hashlib، base64، binascii…).</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📝 الكود</h3>
+    <textarea id="pyCode" dir="ltr" spellcheck="false" style="min-height:220px"></textarea>
+    <div class="btns"><button id="pyRun" class="primary">▶️ شغّل <span class="kbd">Ctrl+Enter</span></button><button id="pyReset">🔄 القالب</button><span id="pyStatus" class="status"></span></div>
+  </div>
+  <div id="pyOut"></div>
+</section>
+
 <!-- ================= TRAINING ================= -->
 <section id="train" class="panel">
   <div class="hero train-hero">
@@ -484,6 +511,7 @@
 <script src="js/web.js"></script>
 <script src="js/jsfuck.js"></script>
 <script src="js/crack.js"></script>
+<script src="js/python.js"></script>
 <script src="js/missions.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
