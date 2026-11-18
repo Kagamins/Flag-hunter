@@ -188,8 +188,9 @@
       <div id="hiOut" style="margin-top:8px"></div>
     </div>
     <div class="card">
-      <h3>🧂 احسب هاش لنص</h3>
-      <textarea id="hcIn" dir="auto" placeholder="النص المراد حساب الهاش له" style="min-height:60px" spellcheck="false"></textarea>
+      <h3>🧂 احسب الهاش (MD5 · SHA · CRC32)</h3>
+      <textarea id="hcIn" dir="auto" placeholder="النص أو البيانات المراد حساب الهاش لها" style="min-height:60px" spellcheck="false"></textarea>
+      <div class="btns" style="margin-top:6px"><label class="small-t">فسّر المدخل كـ <select id="hcFmt"><option value="text">نص (UTF-8)</option><option value="hex">بايتات hex</option><option value="base64">base64</option><option value="decimal">بايتات عشرية</option></select></label><span id="hcInfo" class="muted small-t"></span></div>
       <table id="hcOut"></table>
     </div>
   </div>

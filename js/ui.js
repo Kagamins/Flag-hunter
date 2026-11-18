@@ -513,8 +513,17 @@
     o.innerHTML = r.length ? `<ul class="idlist">${r.map(x => `<li><b>${esc(x.name)}</b> <span class="muted">${esc(x.note)}</span></li>`).join('')}</ul><div class="muted small-t">${s.length} حرفاً. جرّب «فحص كلمات مرشحة» بالأسفل بكلمات من التحدي.</div>` : '<span class="muted">ليست صيغة هاش معروفة. جرّب الفحص السريع.</span>';
     if (/^[a-f0-9]{32,128}$/i.test(s)) $('#hwHash').value = s;
   });
-  $('#hcIn').addEventListener('input', debounce(async () => { const s = $('#hcIn').value; const hs = await C.allHashes(s); $('#hcOut').innerHTML = Object.entries(hs).map(([k, v]) => `<tr><th>${k}</th><td class="mono">${v}</td><td>${copyBtn(v)}</td></tr>`).join(''); }, 150));
-  $('#hcIn').dispatchEvent(new Event('input'));
+  const ASNAME = { text: 'نص UTF-8', hex: 'بايتات hex', base64: 'base64', decimal: 'بايتات عشرية' };
+  const runHashCalc = debounce(async () => {
+    const s = $('#hcIn').value, fmt = $('#hcFmt').value;
+    if (!s) { $('#hcOut').innerHTML = ''; $('#hcInfo').textContent = ''; return; }
+    const bytes = fmt === 'text' ? C.utf8(s) : C.parseBytesInput(s, fmt).bytes;
+    $('#hcInfo').textContent = `${bytes.length.toLocaleString('ar')} بايت (${ASNAME[fmt]})`;
+    const hs = await C.allHashes(bytes);
+    $('#hcOut').innerHTML = Object.entries(hs).map(([k, v]) => `<tr><th>${k}</th><td class="mono">${v}</td><td>${copyBtn(v)}</td></tr>`).join('');
+  }, 150);
+  ['#hcIn', '#hcFmt'].forEach(x => $(x).addEventListener('input', runHashCalc));
+  runHashCalc();
   $('#hwBtn').addEventListener('click', async () => {
     const target = $('#hwHash').value.trim().toLowerCase(), words = $('#hwWords').value.split(/\r?\n/).map(w => w.trim()).filter(Boolean);
     const algo = { 32: 'MD5', 40: 'SHA-1', 64: 'SHA-256', 128: 'SHA-512' }[target.length];
