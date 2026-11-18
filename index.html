@@ -284,7 +284,7 @@
 <section id="python" class="panel">
   <div class="hero py-hero">
     <h1>🐍 مختبر بايثون — اعكس سكربتات التشفير</h1>
-    <p>بايثون حقيقي داخل متصفحك. ألصق سكربت التشفير المُعطى لفهمه، ارفع الملف المشفّر، واكتب فكّ التشفير شغّله هنا. يعمل بدون إنترنت بعد أول تحميل. <b>لا يوجد زر سحري يعكس أي سكربت</b> — الأداة تعطيك بيئة بايثون، وأنت تكتب العملية العكسية.</p>
+    <p>بايثون حقيقي داخل متصفحك. ألصق سكربت التشفير المُعطى لفهمه، ارفع الملف المشفّر، واكتب فكّ التشفير شغّله هنا. يعمل بدون إنترنت بعد أول تحميل. زر <b>«اعكس تلقائياً»</b> يحاول عكس السكربت آلياً لما يقبل العكس (عمليات بايت-ببايت أو إعادة ترتيب بلا مفتاح)، ويتحقّق بإعادة التشفير، ويخبرك بصراحة حين يكون التحدي خارج نطاقه (تشفير بمفتاح أو كتلي أو دالة هاش).</p>
   </div>
   <div class="grid2">
     <div class="card">
@@ -301,7 +301,7 @@
   <div class="card">
     <h3>📝 الكود</h3>
     <div class="editor" id="pyEditor"><div class="gutter"><div class="gutter-inner" id="pyGutter">1</div></div><textarea id="pyCode" dir="ltr" wrap="off" spellcheck="false"></textarea></div>
-    <div class="btns"><button id="pyRun" class="primary">▶️ شغّل <span class="kbd">Ctrl+Enter</span></button><button id="pyLoad">📜 حمّل سكربت .py</button><input type="file" id="pyScriptInput" accept=".py,.txt,text/*" hidden><button id="pyReset">🔄 القالب</button><span id="pyStatus" class="status"></span></div>
+    <div class="btns"><button id="pyRun" class="primary">▶️ شغّل <span class="kbd">Ctrl+Enter</span></button><button id="pyAuto" class="primary" style="background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff">🪄 اعكس تلقائياً</button><button id="pyLoad">📜 حمّل سكربت .py</button><input type="file" id="pyScriptInput" accept=".py,.txt,text/*" hidden><button id="pyReset">🔄 القالب</button><span id="pyStatus" class="status"></span></div>
   </div>
   <div id="pyOut"></div>
 </section>

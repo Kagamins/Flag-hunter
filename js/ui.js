@@ -756,33 +756,51 @@
     if (/^Traceback/.test(r) && !/File "<exec>"/.test(r)) r = r.replace(/^Traceback.*?\n/, '');
     return r;
   }
+  async function pyEnsure() {
+    if (PY.loaded()) return true;
+    const t0 = performance.now();
+    $('#pyStatus').innerHTML = '<span class="spinner"></span> تحميل محرك بايثون (~13 ميغابايت) لأول مرة…';
+    const timer = setInterval(() => { $('#pyStatus').innerHTML = `<span class="spinner"></span> تحميل محرك بايثون… ${Math.round((performance.now() - t0) / 1000)} ثانية`; }, 500);
+    try { await PY.init(stage => { if (stage === 'cdn') $('#pyStatus').innerHTML = '<span class="spinner"></span> المحلي غير متاح، نجرّب الإنترنت (CDN)…'; }); }
+    catch (e) { clearInterval(timer); $('#pyStatus').textContent = ''; $('#pyOut').innerHTML = `<div class="noflag">⚠️ تعذّر تحميل محرك بايثون. على GitHub Pages أو النسخة المحمّلة يعمل بلا إنترنت؛ في المعاينة قد يحتاج اتصالاً. (${esc(e.message || '')})</div>`; return false; }
+    clearInterval(timer); return true;
+  }
+  function pyRenderOut(r, title) {
+    const combined = (r.stdout || '') + (r.result && r.result !== 'None' ? '\n' + r.result : '');
+    const flags = C.deepFlagSearch(combined).flags.filter(f => f.likely !== false).map(f => ({ ...f, method: title + ' · ' + f.method }));
+    let h = renderFlags(flags);
+    h += `<div class="card"><h3>${esc(title)}</h3>`;
+    if (r.stdout && r.stdout.trim()) h += `<div class="pyres"><pre>${vis(r.stdout)}</pre></div>`;
+    if (r.result && r.result !== 'None') h += `<div class="muted small-t" style="margin-top:6px">قيمة آخر تعبير:</div><div class="pyres"><pre>${vis(r.result)}</pre></div>`;
+    const cleanErr = pyCleanTrace(r.stderr);
+    if (cleanErr) h += `<div class="muted small-t" style="margin-top:6px">أخطاء / تتبّع:</div><div class="pyres pyerr"><pre>${vis(cleanErr)}</pre></div>`;
+    if (!((r.stdout && r.stdout.trim()) || (r.result && r.result !== 'None') || cleanErr)) h += `<div class="muted">(لا مخرجات — استخدم print())</div>`;
+    h += `<div class="btns">${combined.trim() ? copyBtn(combined.trim(), '📋 نسخ الناتج') + sendBtn('scan', combined, '🔎 افحص الناتج') : ''}</div></div>`;
+    $('#pyOut').innerHTML = h;
+  }
+  async function pyAuto() {
+    const btn = $('#pyAuto'), run = $('#pyRun'); if (btn.disabled) return;
+    btn.disabled = true; run.disabled = true;
+    if (!(await pyEnsure())) { btn.disabled = false; run.disabled = false; return; }
+    $('#pyStatus').innerHTML = '<span class="spinner"></span> يفحص دالة التشفير…'; const t0 = performance.now();
+    const _clear = "for _n in ['encrypt','enc','encode','cipher','scramble','obfuscate','encrypt_flag','transform','crypt','do_encrypt','xor_encrypt','encipher']:\n    globals().pop(_n, None)\n__name__ = '__frozen__'\n";
+    await PY.run(_clear + $('#pyCode').value, pyBytes, 20000); // fresh: drop stale funcs, define this script's, skip main
+    const r = await PY.run(PY.AUTO, pyBytes, 45000);
+    btn.disabled = false; run.disabled = false; $('#pyStatus').textContent = `⏱️ ${ms(t0)} ملّي ثانية`;
+    if (r.error) { $('#pyOut').innerHTML = `<div class="noflag">⚠️ ${esc(r.error)}</div>`; return; }
+    pyRenderOut(r, '🪄 اعكس تلقائياً');
+  }
+  $('#pyAuto').addEventListener('click', pyAuto);
   async function pyRun() {
     const code = $('#pyCode').value; if (!code.trim()) return;
     const btn = $('#pyRun'); if (btn.disabled) return;
     btn.disabled = true;
-    if (!PY.loaded()) {
-      const t0 = performance.now();
-      $('#pyStatus').innerHTML = '<span class="spinner"></span> تحميل محرك بايثون (~13 ميغابايت) لأول مرة…';
-      let timer = setInterval(() => { $('#pyStatus').innerHTML = `<span class="spinner"></span> تحميل محرك بايثون… ${Math.round((performance.now() - t0) / 1000)} ثانية`; }, 500);
-      try { await PY.init(stage => { if (stage === 'cdn') $('#pyStatus').innerHTML = '<span class="spinner"></span> المحلي غير متاح، نجرّب الإنترنت (CDN)…'; }); }
-      catch (e) { clearInterval(timer); btn.disabled = false; $('#pyStatus').textContent = ''; $('#pyOut').innerHTML = `<div class="noflag">⚠️ تعذّر تحميل محرك بايثون. على GitHub Pages أو النسخة المحمّلة يعمل بلا إنترنت؛ في المعاينة قد يحتاج اتصالاً. (${esc(e.message || '')})</div>`; return; }
-      clearInterval(timer);
-    }
+    if (!(await pyEnsure())) { btn.disabled = false; return; }
     $('#pyStatus').innerHTML = '<span class="spinner"></span> يشغّل…'; const t0 = performance.now();
     const r = await PY.run(code, pyBytes);
     btn.disabled = false; $('#pyStatus').textContent = `⏱️ ${ms(t0)} ملّي ثانية`;
     if (r.error) { $('#pyOut').innerHTML = `<div class="noflag">⚠️ ${esc(r.error)}</div>`; return; }
-    const combined = (r.stdout || '') + (r.result && r.result !== 'None' ? '\n' + r.result : '');
-    const flags = C.deepFlagSearch(combined).flags.filter(f => f.likely !== false).map(f => ({ ...f, method: 'بايثون · ' + f.method }));
-    let h = renderFlags(flags);
-    h += `<div class="card"><h3>📤 الناتج</h3>`;
-    if (r.stdout && r.stdout.trim()) h += `<div class="pyres"><pre>${vis(r.stdout)}</pre></div>`;
-    if (r.result && r.result !== 'None') h += `<div class="muted small-t" style="margin-top:6px">قيمة آخر تعبير:</div><div class="pyres"><pre>${vis(r.result)}</pre></div>`;
-    if (!((r.stdout && r.stdout.trim()) || (r.result && r.result !== 'None')) && !(r.stderr && r.stderr.trim())) h += `<div class="muted">(لا مخرجات — استخدم print())</div>`;
-    const cleanErr = pyCleanTrace(r.stderr);
-    if (cleanErr) h += `<div class="muted small-t" style="margin-top:6px">أخطاء / تتبّع:</div><div class="pyres pyerr"><pre>${vis(cleanErr)}</pre></div>`;
-    h += `<div class="btns">${combined.trim() ? copyBtn(combined.trim(), '📋 نسخ الناتج') + sendBtn('scan', combined, '🔎 افحص الناتج') : ''}</div></div>`;
-    $('#pyOut').innerHTML = h;
+    pyRenderOut(r, '📤 الناتج');
   }
   $('#pyRun').addEventListener('click', pyRun);
 
