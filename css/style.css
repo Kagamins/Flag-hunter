@@ -245,3 +245,14 @@ footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 22
 .me-hero::after { content: "🔁"; }
 #modexp label.small-t { display: block; }
 #modexp input { margin-top: 3px; }
+
+/* ---------- web security cheat sheet ---------- */
+.websec-intro { border-color: var(--warn); background: linear-gradient(135deg, #3a2c10, var(--panel) 70%); }
+.websec code, .websec pre { color: #ffd9a8; }
+.websec .cp { cursor: pointer; }
+.websec .cp:hover { outline: 1px solid var(--sky); outline-offset: 1px; border-radius: 3px; }
+.websec pre { background: #0b0f14; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+.websec td code { word-break: break-all; }
+.websec .steps { padding-inline-start: 18px; }
+.websec-def { border-color: var(--mint); }
+.websec-def ul { padding-inline-start: 18px; } .websec-def li { margin: 5px 0; }

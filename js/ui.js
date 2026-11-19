@@ -42,6 +42,7 @@
     const a = e.target.closest('[data-an]'); if (a) { const v = store.get(a.dataset.an); openBytes(v.name, v.bytes); return; }
     const c = e.target.closest('[data-clear]'); if (c) { const ta = document.getElementById(c.dataset.clear); ta.value = ''; ta.dispatchEvent(new Event('input')); ta.focus(); return; }
     const s = e.target.closest('[data-send]'); if (s) sendTo(s.dataset.send, store.get(s.dataset.val));
+    const cp = e.target.closest('.cp'); if (cp) { copy(cp.textContent.trim()); }
   });
 
   /* ---------- التبويبات ---------- */
