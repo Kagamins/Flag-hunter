@@ -263,3 +263,8 @@ footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 22
 .hs .cp { cursor: pointer; } .hs .cp:hover { outline: 1px solid var(--sky); border-radius: 3px; }
 .hs td { font-size: 12.5px; }
 .predlist { font-family: var(--mono); font-size: 12.5px; direction: ltr; text-align: left; background: #0b0f14; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; max-height: 240px; overflow: auto; }
+
+.doclinks .links { list-style: none; padding: 0; margin: 6px 0 0; }
+.doclinks .links li { padding: 5px 0; border-top: 1px dashed var(--line); }
+.doclinks .links li:first-child { border-top: 0; }
+.doclinks a { font-weight: 600; }
