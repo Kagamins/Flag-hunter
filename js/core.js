@@ -660,5 +660,38 @@
   };
   C.parseBigFlexible = s => { s = String(s).trim(); if (!s) return null; if (/^-?\d+$/.test(s)) return BigInt(s); if (/^0x[0-9a-f]+$/i.test(s)) return BigInt(s); try { return C.evalBigExpr(s); } catch (e) { return null; } };
 
+
+  /* ---------- PRNG cracking: LCG + Mersenne Twister ---------- */
+  C.lcgCrack = (seq, modulus) => {
+    const s = seq.map(BigInt);
+    if (s.length < 3) return { error: 'نحتاج 3 مخرجات على الأقل.' };
+    let m = modulus ? BigInt(modulus) : null;
+    if (!m) {
+      if (s.length < 6) return { error: 'نحتاج 6 مخرجات على الأقل لاستعادة المعامل m (أو أدخل m إن عرفته).' };
+      const d = []; for (let i = 0; i < s.length - 1; i++) d.push(s[i+1] - s[i]);
+      let g = 0n; for (let i = 0; i < d.length - 2; i++) g = C.bgcd(g, C.babs(d[i+2]*d[i] - d[i+1]*d[i+1]));
+      if (g === 0n) return { error: 'تعذّر استعادة m من هذه المخرجات.' };
+      m = g;
+    }
+    const denom = ((s[1]-s[0]) % m + m) % m, inv = C.modinv(denom, m);
+    if (inv === null) return { error: 'تعذّر قلب (s1−s0) بالنسبة لـ m — جرّب مخرجات أكثر أو أدخل m.', m };
+    const a = (((s[2]-s[1]) % m + m) % m * inv) % m;
+    const c = (((s[1] - a*s[0]) % m) + m) % m;
+    for (let i = 0; i < s.length - 1; i++) if ((((a*s[i]+c) % m) + m) % m !== ((s[i+1] % m) + m) % m) return { error: 'المعاملات لا تعيد إنتاج المتتالية — قد تكون المخرجات مقتطعة (bits عليا فقط) أو ليست LCG بسيطاً.', m, a, c };
+    return { m, a, c };
+  };
+  C.lcgNext = (last, a, c, m, n) => { const o = []; let x = ((BigInt(last) % m) + m) % m; for (let i = 0; i < n; i++) { x = ((a*x + c) % m + m) % m; o.push(x); } return o; };
+  C.MT = class {
+    constructor(seed) { this.mt = new Uint32Array(624); this.i = 625; if (seed !== undefined) this.seed(seed >>> 0); }
+    seed(s) { this.mt[0] = s >>> 0; for (let i = 1; i < 624; i++) { const p = this.mt[i-1] ^ (this.mt[i-1] >>> 30); this.mt[i] = (Math.imul(1812433253, p) + i) >>> 0; } this.i = 624; }
+    twist() { for (let i = 0; i < 624; i++) { const y = ((this.mt[i] & 0x80000000) + (this.mt[(i+1)%624] & 0x7fffffff)) >>> 0; let n = this.mt[(i+397)%624] ^ (y >>> 1); if (y & 1) n ^= 0x9908b0df; this.mt[i] = n >>> 0; } this.i = 0; }
+    next() { if (this.i >= 624) this.twist(); let y = this.mt[this.i++]; y ^= y >>> 11; y ^= (y << 7) & 0x9d2c5680; y ^= (y << 15) & 0xefc60000; y ^= y >>> 18; return y >>> 0; }
+  };
+  C.mtUnBitRight = (v, sh) => { let r = 0, x = v >>> 0, i = 0; while (i * sh < 32) { const pm = (0xffffffff << (32 - sh)) >>> (i * sh); const part = (x & pm) >>> 0; x = (x ^ (part >>> sh)) >>> 0; r = (r | part) >>> 0; i++; } return r >>> 0; };
+  C.mtUnBitLeft = (v, sh, mask) => { let r = 0, x = v >>> 0, i = 0; while (i * sh < 32) { const pm = ((0xffffffff >>> (32 - sh)) << (i * sh)) >>> 0; const part = (x & pm) >>> 0; x = (x ^ ((part << sh) & mask)) >>> 0; r = (r | part) >>> 0; i++; } return r >>> 0; };
+  C.mtUntemper = y => { y = C.mtUnBitRight(y >>> 0, 18); y = C.mtUnBitLeft(y, 15, 0xefc60000); y = C.mtUnBitLeft(y, 7, 0x9d2c5680); y = C.mtUnBitRight(y, 11); return y >>> 0; };
+  C.mtClone = outs => { if (outs.length < 624) return null; const mt = new C.MT(); mt.mt = Uint32Array.from(outs.slice(0, 624).map(o => C.mtUntemper((o >>> 0)))); mt.i = 624; return mt; };
+  C.parseNumList = str => { const out = []; for (const tok of String(str).trim().split(/[\s,;]+/).filter(Boolean)) { try { out.push(/^0x/i.test(tok) ? BigInt(tok) : BigInt(tok)); } catch (e) { return { error: 'قيمة غير صالحة: ' + tok }; } } return out; };
+
   return C;
 });

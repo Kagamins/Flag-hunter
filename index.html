@@ -51,6 +51,7 @@
     <button data-tab="web"><i>🌐</i>الويب</button>
     <button data-tab="python"><i>🐍</i>بايثون</button>
     <button data-tab="modexp"><i>🔁</i>فك أسّي</button>
+    <button data-tab="algo"><i>🧮</i>خوارزميات</button>
     <button data-tab="train" class="train-tab"><i>🎯</i>التدريب <span class="badge-count" id="trainCount">0/0</span></button>
     <button data-tab="cheat"><i>📖</i>الدليل السريع</button>
   </nav>
@@ -338,6 +339,82 @@
     </div>
   </div>
   <div id="meOut"></div>
+</section>
+
+<!-- ================= ALGORITHMS / HASKELL ================= -->
+<section id="algo" class="panel">
+  <div class="hero algo-hero">
+    <h1>🧮 الخوارزميات و Haskell — كسر المولّدات وقراءة الشيفرة</h1>
+    <p>لتحديات فيها مولّد أرقام عشوائي ضعيف (LCG أو Mersenne Twister) أو سكربت بلغة مثل Haskell. اكسر المولّد من مخرجاته، أو ترجم الشيفرة إلى بايثون لتشغيلها في تبويب «بايثون».</p>
+  </div>
+
+  <div class="card">
+    <h2>🎲 كسر LCG (مولّد خطي متطابق)</h2>
+    <p class="muted small-t">الصيغة: <code dir="ltr">x₍ₙ₊₁₎ = (a·xₙ + c) mod m</code>. ألصق المخرجات المتتالية (رقم في كل سطر أو مفصولة بفواصل). يستعيد a و c و m ثم يتنبّأ بالتالي.</p>
+    <div class="grid2">
+      <textarea id="lcgIn" dir="ltr" placeholder="مثال:&#10;1103527590&#10;377401605&#10;662824084&#10;…(6 على الأقل)" spellcheck="false" style="min-height:120px"></textarea>
+      <div>
+        <label class="small-t">المعامل m (اختياري، إن عرفته) <input type="text" id="lcgM" dir="ltr" placeholder="مثلاً 2^31 أو 2147483648" style="width:100%" spellcheck="false"></label>
+        <label class="small-t" style="display:block;margin-top:8px">كم قيمة نتنبّأ بها؟ <input type="number" id="lcgN" value="5" min="1" max="100" style="width:80px"></label>
+        <div class="btns"><button id="lcgBtn" class="primary">🔓 اكسر وتنبّأ</button><button id="lcgSample" class="small">مثال</button></div>
+      </div>
+    </div>
+    <div id="lcgOut" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h2>🌀 توقّع Mersenne Twister (MT19937)</h2>
+    <p class="muted small-t">نفس مولّد <code dir="ltr">random</code> في بايثون. من <b>624</b> مخرجاً متتالياً كاملاً (32-bit) نستنسخ الحالة ونتنبّأ بكل ما يليها. ألصق المخرجات (أرقام 32-bit).</p>
+    <textarea id="mtIn" dir="ltr" placeholder="624 رقماً أو أكثر، رقم في كل سطر أو مفصولة بفواصل&#10;(من random.getrandbits(32) مثلاً)" spellcheck="false" style="min-height:120px"></textarea>
+    <div class="btns"><label class="small-t">كم قيمة نتنبّأ بها؟ <input type="number" id="mtN" value="10" min="1" max="200" style="width:80px"></label><button id="mtBtn" class="primary">🔮 استنسخ وتنبّأ</button>
+      <label class="small-t">— أو — فكّ تحوير قيمة واحدة <input type="text" id="mtUnt" dir="ltr" placeholder="رقم 32-bit" style="width:130px"></label><button id="mtUntBtn" class="small">فكّ التحوير (untemper)</button></div>
+    <div id="mtOut" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h2>λ قراءة Haskell وترجمتها إلى بايثون</h2>
+    <p class="muted small-t">لا يمكن تشغيل Haskell في المتصفح، لكن معظم تحديات التشفير تترجم بسهولة إلى بايثون — انقلها إلى تبويب «بايثون» وشغّلها أو اعكسها. اضغط أي مقطع لنسخه.</p>
+    <div class="grid2 hs">
+      <div>
+        <h3>مقابلات شائعة</h3>
+        <table>
+          <tr><th>Haskell</th><th>Python</th></tr>
+          <tr><td class="mono cp">a ^ e `mod` n</td><td class="mono">pow(a, e, n)</td></tr>
+          <tr><td class="mono cp">x `mod` n</td><td class="mono">x % n</td></tr>
+          <tr><td class="mono cp">x `div` n</td><td class="mono">x // n</td></tr>
+          <tr><td class="mono cp">xor a b  (Data.Bits)</td><td class="mono">a ^ b</td></tr>
+          <tr><td class="mono cp">shiftL x n / shiftR x n</td><td class="mono">x &lt;&lt; n / x &gt;&gt; n</td></tr>
+          <tr><td class="mono cp">a .&amp;. b / a .|. b</td><td class="mono">a &amp; b / a | b</td></tr>
+          <tr><td class="mono cp">complement x</td><td class="mono">~x &amp; mask</td></tr>
+          <tr><td class="mono cp">ord c / chr n  (Data.Char)</td><td class="mono">ord(c) / chr(n)</td></tr>
+          <tr><td class="mono cp">map f xs</td><td class="mono">[f(x) for x in xs]</td></tr>
+          <tr><td class="mono cp">zipWith xor a b</td><td class="mono">bytes(x^y for x,y in zip(a,b))</td></tr>
+          <tr><td class="mono cp">foldl f z xs</td><td class="mono">functools.reduce(f, xs, z)</td></tr>
+          <tr><td class="mono cp">iterate f x</td><td class="mono">تكرار: x=f(x)</td></tr>
+          <tr><td class="mono cp">[f x | x &lt;- xs]</td><td class="mono">[f(x) for x in xs]</td></tr>
+          <tr><td class="mono cp">f $ g x</td><td class="mono">f(g(x))</td></tr>
+          <tr><td class="mono cp">f . g</td><td class="mono">lambda x: f(g(x))</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>أنماط متكرّرة في CTF</h3>
+        <ul class="small-t">
+          <li><b>أسّ نمطي</b> <code class="cp">secret ^ 31337 `mod` n</code> ← هذا RSA بمعامل؛ استخدم تبويب <b>«فك أسّي»</b>.</li>
+          <li><b>شيفرة XOR</b> <code class="cp">zipWith xor msg (cycle key)</code> ← تبويب <b>الشيفرات</b> (XOR) أو بايثون.</li>
+          <li><b>طيّ تراكمي</b> <code>foldl</code> على البايتات ← أعِد كتابته في بايثون واعكسه بـ «اعكس تلقائياً».</li>
+          <li><b>Integer</b> في Haskell دقّة لا نهائية مثل int في بايثون — لا قلق من الطول.</li>
+          <li>الأرقام الكبيرة تُكتب عادية؛ <code>0x</code> للست عشري. <code>2^136+85</code> تُكتب كما هي.</li>
+        </ul>
+        <h3 style="margin-top:10px">خطوات العمل</h3>
+        <ol class="small-t">
+          <li>افتح ملف <code>.hs</code> واقرأ الدالة الأساسية (ابحث عن <code>mod</code>، <code>xor</code>، <code>^</code>).</li>
+          <li>حدّد الخوارزمية: RSA؟ XOR؟ مولّد عشوائي؟</li>
+          <li>انقلها إلى بايثون (استخدم الجدول) في تبويب «بايثون»، أو الأداة المناسبة هنا.</li>
+          <li>شغّل العكس، وتحقّق بإعادة التنفيذ.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ================= TRAINING ================= -->

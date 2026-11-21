@@ -46,7 +46,7 @@
   });
 
   /* ---------- التبويبات ---------- */
-  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'python', 'modexp', 'train', 'cheat'];
+  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'python', 'modexp', 'algo', 'train', 'cheat'];
   const TABNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش', scan: 'الفحص', file: 'التحليل', web: 'الويب' };
   function showTab(id) {
     if (!TABS.includes(id)) id = 'scan';
@@ -870,6 +870,50 @@
     if (n == null || e == null || m == null) { $('#meOut').innerHTML = `<div class="noflag">⚠️ أدخل n و e والرسالة m (في خانة c).</div>`; return; }
     const c = C.modpow(((m % n) + n) % n, e, n);
     $('#meOut').innerHTML = `<div class="card"><h3>🔒 التشفير</h3><table><tr><th>c = m^e mod n (عشري)</th><td class="mono">${esc(c.toString())}</td><td>${copyBtn(c.toString())}</td></tr><tr><th>c (hex)</th><td class="mono">0x${esc(c.toString(16))}</td><td>${copyBtn('0x'+c.toString(16))}</td></tr></table></div>`;
+  });
+
+  /* ================= الخوارزميات / Haskell ================= */
+  $('#lcgSample').addEventListener('click', () => {
+    // glibc TYPE_0-ish example: a=1103515245, c=12345, m=2^31
+    const a = 1103515245n, c = 12345n, m = 2n**31n; let x = 42n; const o = [];
+    for (let i = 0; i < 16; i++) { x = (a*x + c) % m; o.push(x.toString()); }
+    $('#lcgIn').value = o.join('\n'); $('#lcgM').value = '';
+  });
+  $('#lcgBtn').addEventListener('click', () => {
+    const parsed = C.parseNumList($('#lcgIn').value);
+    if (parsed.error) { $('#lcgOut').innerHTML = `<div class="noflag">⚠️ ${esc(parsed.error)}</div>`; return; }
+    if (parsed.length < 3) { $('#lcgOut').innerHTML = `<div class="noflag">⚠️ ألصق 6 مخرجات متتالية على الأقل (3 إن أدخلت m).</div>`; return; }
+    const mInput = $('#lcgM').value.trim() ? C.parseBigFlexible($('#lcgM').value) : null;
+    const r = C.lcgCrack(parsed, mInput || undefined);
+    if (r.error) { let h = `<div class="noflag">⚠️ ${esc(r.error)}</div>`; if (r.m) h += `<div class="status">m المرشّح: <code>${esc(r.m.toString())}</code></div>`; $('#lcgOut').innerHTML = h; return; }
+    const n = Math.max(1, Math.min(100, +$('#lcgN').value || 5));
+    const nxt = C.lcgNext(parsed[parsed.length-1], r.a, r.c, r.m, n);
+    let h = `<div class="card"><h3>🔓 المعاملات المستعادة</h3><table>
+      <tr><th>a (المضاعِف)</th><td class="mono">${esc(r.a.toString())}</td><td>${copyBtn(r.a.toString())}</td></tr>
+      <tr><th>c (الزيادة)</th><td class="mono">${esc(r.c.toString())}</td><td>${copyBtn(r.c.toString())}</td></tr>
+      <tr><th>m (المعامل)</th><td class="mono">${esc(r.m.toString())}</td><td>${copyBtn(r.m.toString())}</td></tr></table>
+      <h3 style="margin-top:10px">🔮 التنبّؤ بالقيم التالية</h3><div class="predlist">${nxt.map((v,i)=>`#${i+1}: ${esc(v.toString())}`).join('\n')}</div>
+      <div class="btns">${copyBtn(nxt.map(v=>v.toString()).join('\n'),'📋 نسخ التنبّؤات')}</div>${mInput ? '' : '<div class="muted small-t" style="margin-top:6px">⚠️ m مُستعاد من المخرجات وقد يكون مضاعفاً للمعامل الحقيقي (خاصة لو كان قوّة للعدد 2). إن بدت التنبّؤات خاطئة، ألصق مخرجات أكثر أو أدخل m إن عرفته.</div>'}</div>`;
+    $('#lcgOut').innerHTML = h;
+  });
+  $('#mtBtn').addEventListener('click', () => {
+    const parsed = C.parseNumList($('#mtIn').value);
+    if (parsed.error) { $('#mtOut').innerHTML = `<div class="noflag">⚠️ ${esc(parsed.error)}</div>`; return; }
+    if (parsed.length < 624) { $('#mtOut').innerHTML = `<div class="noflag">⚠️ نحتاج 624 مخرجاً متتالياً على الأقل (لديك ${parsed.length}). يجب أن تكون قيم 32-bit كاملة وغير مقتطعة.</div>`; return; }
+    if (parsed.some(v => v < 0n || v > 0xffffffffn)) { $('#mtOut').innerHTML = `<div class="noflag">⚠️ بعض القيم خارج مجال 32-bit (0 … 4294967295). تأكّد أنها مخرجات getrandbits(32) كاملة.</div>`; return; }
+    const outs = parsed.map(v => Number(v) >>> 0);
+    const clone = C.mtClone(outs); if (!clone) { $('#mtOut').innerHTML = `<div class="noflag">⚠️ تعذّر الاستنساخ.</div>`; return; }
+    // clone is positioned right after the first 624; skip any extra pasted outputs so prediction continues after ALL of them
+    for (let i = 0; i < outs.length - 624; i++) clone.next();
+    const n = Math.max(1, Math.min(200, +$('#mtN').value || 10));
+    const pred = []; for (let i = 0; i < n; i++) pred.push(clone.next() >>> 0);
+    $('#mtOut').innerHTML = `<div class="card"><h3>🔮 القيم التالية المتوقّعة (بعد ${outs.length} مخرجاً)</h3><div class="predlist">${pred.map((v,i)=>`#${outs.length+i+1}: ${v}`).join('\n')}</div><div class="btns">${copyBtn(pred.join('\n'),'📋 نسخ')}<span class="muted small-t">الحالة مستنسخة بالكامل — كل المخرجات المستقبلية متوقّعة بدقّة.</span></div></div>`;
+  });
+  $('#mtUntBtn').addEventListener('click', () => {
+    const v = C.parseBigFlexible($('#mtUnt').value);
+    if (v === null || v < 0n || v > 0xffffffffn) { $('#mtOut').innerHTML = `<div class="noflag">⚠️ أدخل رقم 32-bit صالحاً.</div>`; return; }
+    const u = C.mtUntemper(Number(v) >>> 0);
+    $('#mtOut').innerHTML = `<div class="card"><h3>فكّ التحوير (untemper)</h3><table><tr><th>المخرج</th><td class="mono">${esc(v.toString())}</td></tr><tr><th>كلمة الحالة</th><td class="mono">${u} (0x${u.toString(16)})</td><td>${copyBtn(String(u))}</td></tr></table><div class="muted small-t">اجمع 624 كلمة حالة متتالية لاستنساخ المولّد كاملاً.</div></div>`;
   });
 
   window.UI = { sendTo, setField, fillRSA, openBytes, openPython, showTab, copy };

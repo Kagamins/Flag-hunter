@@ -256,3 +256,10 @@ footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 22
 .websec .steps { padding-inline-start: 18px; }
 .websec-def { border-color: var(--mint); }
 .websec-def ul { padding-inline-start: 18px; } .websec-def li { margin: 5px 0; }
+
+/* ---------- algorithms tab ---------- */
+.algo-hero { background: linear-gradient(135deg, #2a6b6b, #3a2a6b); }
+.algo-hero::after { content: "🧮"; }
+.hs .cp { cursor: pointer; } .hs .cp:hover { outline: 1px solid var(--sky); border-radius: 3px; }
+.hs td { font-size: 12.5px; }
+.predlist { font-family: var(--mono); font-size: 12.5px; direction: ltr; text-align: left; background: #0b0f14; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; max-height: 240px; overflow: auto; }
