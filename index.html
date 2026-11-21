@@ -720,6 +720,20 @@
       </table>
       <div class="muted small-t">تسميم السجلّات و <code>/proc/self/environ</code> لتحويل LFI إلى تنفيذ. سلاسل فلاتر PHP لاستخراج الأعلام: ابحث عن "php_filter_chain_generator". الدفاع: <code>allow_url_include=Off</code>، قائمة بيضاء للمسارات، <code>basename()</code>.</div>
     </div>
+    <div class="card">
+      <h3>🍪 جلسات PHP (PHPSESSID)</h3>
+      <p class="small-t">الكوكي <code>PHPSESSID</code> ليس إلا <b>مفتاحاً عشوائياً</b> (26 حرفاً من <code>0-9a-v</code>) — لا يحوي اسم المستخدم. البيانات تُخزَّن على الخادم في ملف:</p>
+      <pre class="cp">/var/lib/php/sessions/sess_&lt;PHPSESSID&gt;</pre>
+      <pre class="cp">/tmp/sess_&lt;PHPSESSID&gt;</pre>
+      <p class="small-t">صيغة الملف <code>مفتاح|قيمة_متسلسلة</code>، فاسم المستخدم يظهر نصّاً صريحاً:</p>
+      <pre class="cp">username|s:5:"admin";role|s:9:"moderator";id|i:1;</pre>
+      <table>
+        <tr><td class="muted">اقرأ الجلسة</td><td>عبر LFI/قراءة ملف: <code class="cp">?page=/tmp/sess_&lt;id&gt;</code></td></tr>
+        <tr><td class="muted">تسميم الجلسة</td><td>أدخل كود PHP في قيمة مخزّنة (مثل اسم المستخدم أو User-Agent) ثم ضمّن ملف الجلسة → RCE</td></tr>
+        <tr><td class="muted">كوكي مزيّف؟</td><td>إن احتوى الكوكي نقاطاً (JWT) أو <code>=</code> (Base64) فهو رمز مخصّص — فكّه في تبويب «الويب» أو «الهاش»</td></tr>
+      </table>
+      <div class="muted small-t">تحقّق من المسار الحقيقي عبر <code class="cp">session.save_path</code> في <code>phpinfo()</code>. الدفاع: صلاحيات صارمة على مجلّد الجلسات، ومعرّفات جلسة قوية.</div>
+    </div>
   </div>
 
   <div class="grid2 websec">
