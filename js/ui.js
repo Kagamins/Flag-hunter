@@ -873,6 +873,27 @@
   });
 
   /* ================= الخوارزميات / Haskell ================= */
+  /* --- حل معادلات نمطية دفعة واحدة --- */
+  $('#meqSample').addEventListener('click', () => {
+    $('#meqIn').value = '5 * x[0] mod 97 = 20\n3 * x[1] mod 97 = 9\n7 * x[2] mod 97 = 14\n11 * x[3] mod 97 = 44';
+  });
+  $('#meqBtn').addEventListener('click', () => {
+    const t = $('#meqIn').value; if (!t.trim()) { $('#meqOut').innerHTML = ''; return; }
+    const r = C.solveModEqs(t);
+    const errs = r.rows.filter(x => x.error);
+    const printable = /^[\x20-\x7e]*$/.test(r.flag);
+    const fl = C.findFlags(r.flag);
+    let h = '';
+    if (r.flag) h += `<div class="flags"><h2>🚩 الناتج</h2><div class="flagrow"><code>${vis(r.flag)}</code>${copyBtn(r.flag)}<span class="how">chr(x%256) · ${r.rows.length} معادلة</span></div></div>`;
+    if (fl.length) G.onFlags([{ flag: fl[0], method: 'حل معادلات نمطية' }]);
+    h += `<div class="card"><h3>قيم x</h3>`;
+    if (!printable) h += `<div class="muted small-t">⚠️ بعض البايتات غير قابلة للطباعة — قد تكون الصيغة المطلوبة مختلفة (مثلاً بايتات x الكاملة لا x%256).</div>`;
+    if (errs.length) h += `<div class="tag warn">${errs.length} سطر لم يُحَل</div>`;
+    h += `<div class="predlist">${r.rows.map(x => x.error ? `#${x.idx ?? '?'}: ⚠️ ${esc(x.error)}` : `#${x.idx ?? ''}: x=${esc(x.x.toString())}  → chr(${x.ch})=${JSON.stringify(String.fromCharCode(x.ch))}`).join('\n')}</div>`;
+    h += `<div class="btns">${r.flag ? copyBtn(r.flag, '📋 نسخ العلم') + sendBtn('scan', r.flag, '🔎 افحص') : ''}</div></div>`;
+    $('#meqOut').innerHTML = h;
+  });
+
   $('#lcgSample').addEventListener('click', () => {
     // glibc TYPE_0-ish example: a=1103515245, c=12345, m=2^31
     const a = 1103515245n, c = 12345n, m = 2n**31n; let x = 42n; const o = [];

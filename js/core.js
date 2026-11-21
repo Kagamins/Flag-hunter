@@ -693,5 +693,31 @@
   C.mtClone = outs => { if (outs.length < 624) return null; const mt = new C.MT(); mt.mt = Uint32Array.from(outs.slice(0, 624).map(o => C.mtUntemper((o >>> 0)))); mt.i = 624; return mt; };
   C.parseNumList = str => { const out = []; for (const tok of String(str).trim().split(/[\s,;]+/).filter(Boolean)) { try { out.push(/^0x/i.test(tok) ? BigInt(tok) : BigInt(tok)); } catch (e) { return { error: 'قيمة غير صالحة: ' + tok }; } } return out; };
 
+
+  /* ---------- batch modular linear equation solver: a·x mod n = b ---------- */
+  C.solveModEqs = text => {
+    const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const rows = []; const num = '0x[0-9a-fA-F]+|\\d+';
+    for (const line of lines) {
+      const norm = line.replace(/[≡]/g, '=').replace(/[×·]/g, '*');
+      const A = (norm.match(new RegExp(num)) || [])[0];
+      const nm = norm.match(new RegExp('(?:mod|%)\\s*\\(?\\s*(' + num + ')', 'i'));
+      const bm = norm.match(new RegExp('=\\s*(' + num + ')'));
+      const im = norm.match(/x\s*\[\s*(\d+)\s*\]/i); const idx = im ? +im[1] : null;
+      if (!A || !nm || !bm) { rows.push({ line, idx, error: 'صيغة غير مفهومة' }); continue; }
+      try {
+        const a = BigInt(A), n = BigInt(nm[1]), b = BigInt(bm[1]);
+        if (n === 0n) { rows.push({ line, idx, error: 'n = 0' }); continue; }
+        const inv = C.modinv(((a % n) + n) % n, n);
+        if (inv === null) { rows.push({ line, idx, a, n, b, error: 'لا يوجد معكوس (gcd(a,n)≠1)' }); continue; }
+        const x = (((b % n) * inv) % n + n) % n;
+        rows.push({ idx, a, n, b, x, ch: Number(x % 256n) });
+      } catch (e) { rows.push({ line, idx, error: 'قيمة غير صالحة' }); }
+    }
+    if (rows.length && rows.every(r => r.idx !== null)) rows.sort((p, q) => p.idx - q.idx);
+    const flag = rows.map(r => r.ch !== undefined ? String.fromCharCode(r.ch) : '?').join('');
+    return { rows, flag };
+  };
+
   return C;
 });

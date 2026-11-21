@@ -349,6 +349,14 @@
   </div>
 
   <div class="card">
+    <h2>🧩 حل معادلات نمطية دفعة واحدة <span class="muted small-t">— a·x mod n = b</span></h2>
+    <p class="muted small-t">نمط شائع: مجموعة معادلات، كل واحدة تعطي بايتاً من العلم. يحسب <code dir="ltr">x = b·a⁻¹ mod n</code> لكل سطر ويبني العلم من <code dir="ltr">chr(x%256)</code>. يقبل صيغ <code dir="ltr">mod</code> و <code dir="ltr">%</code> و <code dir="ltr">(mod n)</code>، ويرتّب حسب <code dir="ltr">x[i]</code>.</p>
+    <textarea id="meqIn" dir="ltr" placeholder="a * x[0] mod n = b&#10;a * x[1] mod n = b&#10;…" spellcheck="false" style="min-height:120px"></textarea>
+    <div class="btns"><button id="meqBtn" class="primary">🔓 حل وابنِ العلم</button><button id="meqSample" class="small">مثال</button></div>
+    <div id="meqOut" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
     <h2>🎲 كسر LCG (مولّد خطي متطابق)</h2>
     <p class="muted small-t">الصيغة: <code dir="ltr">x₍ₙ₊₁₎ = (a·xₙ + c) mod m</code>. ألصق المخرجات المتتالية (رقم في كل سطر أو مفصولة بفواصل). يستعيد a و c و m ثم يتنبّأ بالتالي.</p>
     <div class="grid2">
