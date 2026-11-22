@@ -88,11 +88,44 @@
       }
       return hx(h0) + hx(h1) + hx(h2) + hx(h3) + hx(h4) + hx(h5) + hx(h6) + hx(h7);
     }
-    return { MD5: md5, 'SHA-1': sha1, 'SHA-256': sha256 };
+    // SHA-512 (64-bit عبر زوجي 32-بت [hi,lo])
+    const K512 = [[0x428a2f98,0xd728ae22],[0x71374491,0x23ef65cd],[0xb5c0fbcf,0xec4d3b2f],[0xe9b5dba5,0x8189dbbc],[0x3956c25b,0xf348b538],[0x59f111f1,0xb605d019],[0x923f82a4,0xaf194f9b],[0xab1c5ed5,0xda6d8118],[0xd807aa98,0xa3030242],[0x12835b01,0x45706fbe],[0x243185be,0x4ee4b28c],[0x550c7dc3,0xd5ffb4e2],[0x72be5d74,0xf27b896f],[0x80deb1fe,0x3b1696b1],[0x9bdc06a7,0x25c71235],[0xc19bf174,0xcf692694],[0xe49b69c1,0x9ef14ad2],[0xefbe4786,0x384f25e3],[0x0fc19dc6,0x8b8cd5b5],[0x240ca1cc,0x77ac9c65],[0x2de92c6f,0x592b0275],[0x4a7484aa,0x6ea6e483],[0x5cb0a9dc,0xbd41fbd4],[0x76f988da,0x831153b5],[0x983e5152,0xee66dfab],[0xa831c66d,0x2db43210],[0xb00327c8,0x98fb213f],[0xbf597fc7,0xbeef0ee4],[0xc6e00bf3,0x3da88fc2],[0xd5a79147,0x930aa725],[0x06ca6351,0xe003826f],[0x14292967,0x0a0e6e70],[0x27b70a85,0x46d22ffc],[0x2e1b2138,0x5c26c926],[0x4d2c6dfc,0x5ac42aed],[0x53380d13,0x9d95b3df],[0x650a7354,0x8baf63de],[0x766a0abb,0x3c77b2a8],[0x81c2c92e,0x47edaee6],[0x92722c85,0x1482353b],[0xa2bfe8a1,0x4cf10364],[0xa81a664b,0xbc423001],[0xc24b8b70,0xd0f89791],[0xc76c51a3,0x0654be30],[0xd192e819,0xd6ef5218],[0xd6990624,0x5565a910],[0xf40e3585,0x5771202a],[0x106aa070,0x32bbd1b8],[0x19a4c116,0xb8d2d0c8],[0x1e376c08,0x5141ab53],[0x2748774c,0xdf8eeb99],[0x34b0bcb5,0xe19b48a8],[0x391c0cb3,0xc5c95a63],[0x4ed8aa4a,0xe3418acb],[0x5b9cca4f,0x7763e373],[0x682e6ff3,0xd6b2b8a3],[0x748f82ee,0x5defb2fc],[0x78a5636f,0x43172f60],[0x84c87814,0xa1f0ab72],[0x8cc70208,0x1a6439ec],[0x90befffa,0x23631e28],[0xa4506ceb,0xde82bde9],[0xbef9a3f7,0xb2c67915],[0xc67178f2,0xe372532b],[0xca273ece,0xea26619c],[0xd186b8c7,0x21c0c207],[0xeada7dd6,0xcde0eb1e],[0xf57d4f7f,0xee6ed178],[0x06f067aa,0x72176fba],[0x0a637dc5,0xa2c898a6],[0x113f9804,0xbef90dae],[0x1b710b35,0x131c471b],[0x28db77f5,0x23047d84],[0x32caab7b,0x40c72493],[0x3c9ebe0a,0x15c9bebc],[0x431d67c4,0x9c100d4c],[0x4cc5d4be,0xcb3e42b6],[0x597f299c,0xfc657e2a],[0x5fcb6fab,0x3ad6faec],[0x6c44198c,0x4a475817]];
+    const a64 = (x,y)=>{ const lo=(x[1]>>>0)+(y[1]>>>0); const hi=(x[0]>>>0)+(y[0]>>>0)+(lo>0xffffffff?1:0); return [hi>>>0,lo>>>0]; };
+    const r64 = (x,n)=>{ let hi,lo; if(n===32)return [x[1]>>>0,x[0]>>>0]; if(n<32){hi=((x[0]>>>n)|(x[1]<<(32-n)))>>>0;lo=((x[1]>>>n)|(x[0]<<(32-n)))>>>0;}else{const m=n-32;hi=((x[1]>>>m)|(x[0]<<(32-m)))>>>0;lo=((x[0]>>>m)|(x[1]<<(32-m)))>>>0;} return [hi,lo]; };
+    const sr64 = (x,n)=>{ let hi,lo; if(n<32){hi=(x[0]>>>n)>>>0;lo=((x[1]>>>n)|(x[0]<<(32-n)))>>>0;}else{hi=0;lo=(x[0]>>>(n-32))>>>0;} return [hi,lo]; };
+    const x64 = (a,b)=>[(a[0]^b[0])>>>0,(a[1]^b[1])>>>0];
+    function sha512(bytes) {
+      const ml = bytes.length, withPad = (((ml + 16) >> 7) + 1) << 7, b = new Uint8Array(withPad);
+      b.set(bytes); b[ml] = 0x80; const dv = new DataView(b.buffer), bits = ml * 8;
+      dv.setUint32(withPad - 8, Math.floor(bits / 0x100000000)); dv.setUint32(withPad - 4, bits >>> 0);
+      let h = [[0x6a09e667,0xf3bcc908],[0xbb67ae85,0x84caa73b],[0x3c6ef372,0xfe94f82b],[0xa54ff53a,0x5f1d36f1],[0x510e527f,0xade682d1],[0x9b05688c,0x2b3e6c1f],[0x1f83d9ab,0xfb41bd6b],[0x5be0cd19,0x137e2179]].map(p=>p.slice());
+      const w = new Array(80);
+      for (let off = 0; off < withPad; off += 128) {
+        for (let i = 0; i < 16; i++) w[i] = [dv.getUint32(off+i*8)>>>0, dv.getUint32(off+i*8+4)>>>0];
+        for (let i = 16; i < 80; i++) {
+          const s0 = x64(x64(r64(w[i-15],1),r64(w[i-15],8)),sr64(w[i-15],7));
+          const s1 = x64(x64(r64(w[i-2],19),r64(w[i-2],61)),sr64(w[i-2],6));
+          w[i] = a64(a64(a64(w[i-16],s0),w[i-7]),s1);
+        }
+        let A=h[0].slice(),B=h[1].slice(),Cc=h[2].slice(),D=h[3].slice(),E=h[4].slice(),Ff=h[5].slice(),Gg=h[6].slice(),Hh=h[7].slice();
+        for (let i = 0; i < 80; i++) {
+          const S1 = x64(x64(r64(E,14),r64(E,18)),r64(E,41));
+          const ch = [((E[0]&Ff[0])^(~E[0]&Gg[0]))>>>0,((E[1]&Ff[1])^(~E[1]&Gg[1]))>>>0];
+          const t1 = a64(a64(a64(a64(Hh,S1),ch),K512[i]),w[i]);
+          const S0 = x64(x64(r64(A,28),r64(A,34)),r64(A,39));
+          const maj = [((A[0]&B[0])^(A[0]&Cc[0])^(B[0]&Cc[0]))>>>0,((A[1]&B[1])^(A[1]&Cc[1])^(B[1]&Cc[1]))>>>0];
+          const t2 = a64(S0,maj);
+          Hh=Gg; Gg=Ff; Ff=E; E=a64(D,t1); D=Cc; Cc=B; B=A; A=a64(t1,t2);
+        }
+        h[0]=a64(h[0],A);h[1]=a64(h[1],B);h[2]=a64(h[2],Cc);h[3]=a64(h[3],D);h[4]=a64(h[4],E);h[5]=a64(h[5],Ff);h[6]=a64(h[6],Gg);h[7]=a64(h[7],Hh);
+      }
+      return h.map(p => hx(p[0]) + hx(p[1])).join('');
+    }
+    return { MD5: md5, 'SHA-1': sha1, 'SHA-256': sha256, 'SHA-512': sha512 };
   }
   const IMPL = hashImpls();
   K.hash = (algo, bytes) => IMPL[algo](bytes);
-  K.ALGOS = { 32: 'MD5', 40: 'SHA-1', 64: 'SHA-256' };
+  K.ALGOS = { 32: 'MD5', 40: 'SHA-1', 64: 'SHA-256', 128: 'SHA-512' };
   K.algoFor = h => K.ALGOS[(h || '').trim().length];
   K.CHARSETS = {
     digits: '0123456789',
@@ -109,6 +142,9 @@
   // قائمة كلمات شائعة مدمجة (مختصرة) — كلمات مرور شائعة + كلمات متكررة في CTF
   K.COMMON = ('123456 password 123456789 12345678 12345 qwerty abc123 111111 1234567 123123 admin letmein welcome monkey 1234 dragon 1234567890 football iloveyou 123321 root pass test guest info administrator user login changeme secret sunshine princess qwerty123 superman batman trustno1 hello whatever shadow master michael jennifer hunter 000000 666666 7777777 121212 654321 passw0rd password1 qwertyuiop baseball soccer hockey killer george asshole andrew charlie michelle love jordan jessica pepper daniel access 696969 maggie 555555 flower hannah thomas tigger robert ginger buster soccer1 batman1 ferrari cookie summer ashley bailey passion nicole chelsea biteme matthew 112233 123654 1q2w3e 1qaz2wsx qazwsx zaq12wsx google chrome firefox linux ubuntu python javascript hacker cyber security flag ctf capture the_flag hidden secret_key backdoor exploit payload shell reverse pwned gg easy medium hard noob leet 1337 h4ck3r p4ssw0rd adminadmin toor kali root123 test123 demo sample example default temp qwerty1 asdf asdfgh zxcvbn vim nano bash').split(' ');
 
+  // قائمة موسّعة للبحث الجماعي (نمط CrackStation): الشائعة + أسماء/كلمات/أنماط متكرّرة في التحديات
+  K.BIGLIST = [...new Set(K.COMMON.concat(('abc abcd abcde abcdef aaa aaaa aaaaa 11111 22222 00000 999999 123 1111 2222 passwd pass123 Password Password1 Password123 admin123 administrator1 welcome1 welcome123 qwerty12 qazwsxedc 1qazxsw2 zxcvbnm asdfghjkl 0987654321 abc12345 a1b2c3 123abc secret123 letmein1 iloveyou1 princess1 sunshine1 monkey123 dragon123 master123 ninja samurai hunter2 hunter123 freedom whatever1 computer internet server network database oracle postgres mysql root toor system public private administrator guest nobody operator manager support service backup default1 changeit keystore jenkins docker kubernetes nginx apache tomcat redis mongodb elastic kibana grafana prometheus terraform ansible vault consul gitlab github bitbucket jira confluence slack discord telegram signal whatsapp facebook instagram twitter youtube google amazon microsoft apple samsung huawei nokia xiaomi flag1 flag123 theflag getflag findme catchme youfoundme congrats congratulations winner solved done complete finish start begin level1 level2 stage1 round1 easypeasy toosimple weakpass nosecurity plaintext md5sum sha256sum rainbow collision preimage birthday salt pepper nonce token session cookie bearer jwt base encode decode cipher secret key public_key private_key passphrase mnemonic seed wallet bitcoin ethereum satoshi vitalik mallory alice bob carol dave eve trent oscar victor peggy chuck walter craig arthur merlin').split(' ')))];
+
   /* ---------- Worker ---------- */
   function workerBody() {
     const IMPL = (HASHIMPLS)();
@@ -121,9 +157,31 @@
     }
     const utf8 = s => { const a = []; for (let i = 0; i < s.length; i++) { const c = s.codePointAt(i); if (c < 128) a.push(c); else if (c < 2048) a.push(192 | c >> 6, 128 | c & 63); else { a.push(224 | c >> 12, 128 | c >> 6 & 63, 128 | c & 63); } if (c > 0xffff) i++; } return Uint8Array.from(a); };
     self.onmessage = e => {
-      const o = e.data, algo = o.algo, target = o.target, fn = IMPL[algo];
-      let tried = 0, found = null; const t0 = Date.now(); let last = t0;
-      const tick = () => { const now = Date.now(); if (now - last > 250) { self.postMessage({ type: 'progress', tried, ms: now - t0 }); last = now; } };
+      const o = e.data;
+      let tried = 0; const t0 = Date.now(); let last = t0;
+      const tick = (ex) => { const now = Date.now(); if (now - last > 250) { self.postMessage(Object.assign({ type: 'progress', tried, ms: now - t0 }, ex || {})); last = now; } };
+      // بحث جماعي: عدّة أهداف دفعة واحدة مقابل القائمة وتحويراتها
+      if (o.mode === 'many') {
+        const needed = o.algos, sets = {}; let remaining = 0;
+        for (const a of needed) { sets[a] = new Set(o.targets[a]); remaining += sets[a].size; }
+        const found = {};
+        outer: for (let i = 0; i < o.words.length; i++) {
+          const gen = o.mutate ? mutate(o.words[i]) : [o.words[i]];
+          for (const cand of gen) {
+            const bytes = utf8(cand); tried++;
+            for (const a of needed) {
+              const s = sets[a]; if (!s.size) continue;
+              const h = IMPL[a](bytes);
+              if (s.has(h)) { found[h] = { plain: cand, algo: a }; s.delete(h); if (!--remaining) break outer; }
+            }
+            if ((tried & 4095) === 0) tick({ found: Object.keys(found).length, remaining });
+          }
+        }
+        self.postMessage({ type: 'manydone', found, tried, ms: Date.now() - t0 });
+        return;
+      }
+      const algo = o.algo, target = o.target, fn = IMPL[algo];
+      let found = null;
       if (o.mode === 'dict') {
         const words = o.words, total = words.length;
         outer: for (let i = 0; i < words.length; i++) {
@@ -169,6 +227,34 @@
       };
       w.onerror = e => { w.terminate(); K._w = null; resolve({ error: 'خطأ في العامل: ' + (e.message || '') }); };
       w.postMessage({ mode: opts.mode, algo, target, words: opts.words || [], mutate: !!opts.mutate, charset: opts.charset || 'lower+digits', minLen: opts.minLen || 1, maxLen: opts.maxLen || 4 });
+    });
+  };
+  // بحث جماعي عن عدّة هاشات دفعة واحدة (نمط CrackStation)
+  K.crackMany = (opts, onProgress) => {
+    const items = (opts.hashes || []).map(r => {
+      const raw = (r || '').trim(), h = raw.toLowerCase();
+      const algo = /^[0-9a-f]+$/.test(h) ? K.algoFor(h) : null;
+      return { raw, h, algo };
+    }).filter(x => x.h);
+    const targets = {}, algos = [];
+    for (const it of items) {
+      if (!it.algo) continue;
+      if (!targets[it.algo]) { targets[it.algo] = new Set(); algos.push(it.algo); }
+      targets[it.algo].add(it.h);
+    }
+    const words = [...new Set([...(opts.words || []), ...(opts.useCommon !== false ? K.BIGLIST : [])])];
+    if (!algos.length) return Promise.resolve({ items, found: {}, tried: 0, ms: 0, unsupported: true });
+    if (!words.length) return Promise.resolve({ items, error: 'لا توجد كلمات للبحث — فعّل القائمة المدمجة أو أضف كلمات.' });
+    const targetsArr = {}; for (const a of algos) targetsArr[a] = [...targets[a]];
+    return new Promise(resolve => {
+      let w; try { w = new Worker(getWorkerURL()); } catch (e) { resolve({ items, error: 'تعذّر تشغيل العامل: ' + e.message }); return; }
+      K._w = w;
+      w.onmessage = e => {
+        if (e.data.type === 'progress') { onProgress && onProgress(e.data); return; }
+        w.terminate(); K._w = null; resolve(Object.assign({ items }, e.data));
+      };
+      w.onerror = e => { w.terminate(); K._w = null; resolve({ items, error: 'خطأ في العامل: ' + (e.message || '') }); };
+      w.postMessage({ mode: 'many', algos, targets: targetsArr, words, mutate: !!opts.mutate });
     });
   };
   K.stop = () => { if (K._w) { K._w.terminate(); K._w = null; return true; } return false; };

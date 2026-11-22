@@ -672,7 +672,7 @@
     if (crkRunning) return;
     const target = $('#crkHash').value.trim().toLowerCase();
     const algo = KR.algoFor(target);
-    if (!algo) { $('#crkOut').innerHTML = `<div class="noflag">⚠️ ألصق هاش hex بطول 32 (MD5) أو 40 (SHA-1) أو 64 (SHA-256). SHA-512 غير مدعوم في الكسر — استخدم «فحص كلمات مرشحة».</div>`; return; }
+    if (!algo) { $('#crkOut').innerHTML = `<div class="noflag">⚠️ ألصق هاش hex بطول 32 (MD5) أو 40 (SHA-1) أو 64 (SHA-256) أو 128 (SHA-512).</div>`; return; }
     const mode = crkMode();
     let opts = { target, algo, mode };
     if (mode === 'dict') {
@@ -697,6 +697,40 @@
     }
   });
   $('#crkStop').addEventListener('click', () => { if (KR.stop()) { crkRunning = false; $('#crkBtn').textContent = '🔨 ابدأ الكسر'; $('#crkStop').hidden = true; $('#crkProg').textContent = ''; $('#crkOut').innerHTML = `<div class="noflag">⏹️ أُوقف الكسر.</div>`; } });
+
+  /* ---- بحث جماعي عن الهاش (نمط CrackStation) ---- */
+  let csRunning = false;
+  $('#csBtn').addEventListener('click', async () => {
+    if (csRunning) return;
+    const raw = $('#csIn').value.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+    if (!raw.length) { $('#csOut').innerHTML = `<div class="noflag">ألصق هاشاً واحداً على الأقل (MD5 32 · SHA-1 40 · SHA-256 64 · SHA-512 128 حرفاً hex).</div>`; return; }
+    const extra = $('#csWords').value.split(/\r?\n/).map(w => w.trim()).filter(Boolean);
+    const opts = { hashes: raw, mutate: $('#csMut').checked, useCommon: $('#csCommon').checked, words: extra };
+    csRunning = true; $('#csBtn').textContent = '🪄 يبحث…'; $('#csStop').hidden = false;
+    $('#csOut').innerHTML = ''; $('#csProg').innerHTML = '<span class="spinner"></span> نحسب الجدول ونطابق…';
+    const t0 = performance.now();
+    const r = await KR.crackMany(opts, p => { $('#csProg').innerHTML = `<span class="spinner"></span> جُرّب ${p.tried.toLocaleString('ar')} احتمال… وجدنا ${(p.found || 0).toLocaleString('ar')} / بقي ${(p.remaining != null ? p.remaining : '؟')}`; });
+    csRunning = false; $('#csBtn').textContent = '🪄 ابحث عن الكل'; $('#csStop').hidden = true; $('#csProg').textContent = '';
+    if (r.error) { $('#csOut').innerHTML = `<div class="noflag">⚠️ ${esc(r.error)}</div>`; return; }
+    const found = r.found || {};
+    let hits = 0;
+    const rows = r.items.map(it => {
+      let res;
+      if (!it.algo) res = `<span class="muted">طول غير مدعوم (${it.h.length} حرفاً)</span>`;
+      else if (found[it.h]) { hits++; res = `<code dir="ltr" style="color:var(--mint)">${vis(found[it.h].plain)}</code> ${copyBtn(found[it.h].plain)}`; }
+      else res = `<span class="muted">غير موجود في القائمة المجانية</span>`;
+      return `<tr><td class="mono" style="word-break:break-all">${esc(it.raw)}</td><td>${esc(it.algo || '—')}</td><td>${res}</td></tr>`;
+    }).join('');
+    const head = r.unsupported
+      ? `<div class="noflag">لم نتعرّف على أي هاش بطول مدعوم. الأطوال المدعومة: 32 · 40 · 64 · 128 حرفاً hex.</div>`
+      : `<div class="status">طوبِقَ ${hits.toLocaleString('ar')} من ${r.items.length.toLocaleString('ar')} · ${(r.tried || 0).toLocaleString('ar')} محاولة · ${ms(t0)} ملّي ثانية</div>`;
+    $('#csOut').innerHTML = head + `<table><thead><tr><th>الهاش</th><th>النوع</th><th>النتيجة</th></tr></thead><tbody>${rows}</tbody></table>`;
+    if (hits) {
+      G.event('hashmatch');
+      for (const it of r.items) { const f = found[it.h]; if (f) { const fl = C.findFlags(f.plain); if (fl.length) { G.onFlags([{ flag: fl[0], method: 'بحث جماعي عن الهاش' }]); break; } } }
+    }
+  });
+  $('#csStop').addEventListener('click', () => { if (KR.stop()) { csRunning = false; $('#csBtn').textContent = '🪄 ابحث عن الكل'; $('#csStop').hidden = true; $('#csProg').textContent = ''; $('#csOut').innerHTML = `<div class="noflag">⏹️ أُوقف البحث.</div>`; } });
 
   /* ================= بايثون (Pyodide) ================= */
   let pyBytes = null, pyLoadingShown = false;

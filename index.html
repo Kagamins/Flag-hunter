@@ -208,7 +208,7 @@
   </div>
   <div class="card">
     <h3>🔨 كسر الهاش <span class="muted small-t">— الهاش لا يُفكّ، لكن يمكن تجربة مدخلات حتى نجد الأصل (ينجح فقط إن كان قصيراً أو شائعاً)</span></h3>
-    <input type="text" id="crkHash" dir="ltr" placeholder="الهاش الهدف (MD5 / SHA-1 / SHA-256)" style="width:100%" spellcheck="false">
+    <input type="text" id="crkHash" dir="ltr" placeholder="الهاش الهدف (MD5 / SHA-1 / SHA-256 / SHA-512)" style="width:100%" spellcheck="false">
     <div class="btns" style="margin-top:8px">
       <label class="small-t"><input type="radio" name="crkMode" value="dict" checked> قائمة كلمات</label>
       <label class="small-t"><input type="radio" name="crkMode" value="brute"> قوة غاشمة (كل الاحتمالات)</label>
@@ -225,6 +225,18 @@
     <div class="btns"><button id="crkBtn" class="primary">🔨 ابدأ الكسر</button><button id="crkStop" hidden>⏹️ إيقاف</button></div>
     <div class="status" id="crkProg"></div>
     <div id="crkOut"></div>
+  </div>
+  <div class="card">
+    <h3>🪄 بحث جماعي عن الهاش <span class="muted small-t">— نمط CrackStation: ألصق عدّة هاشات دفعةً واحدة، نكتشف نوع كلٍّ منها (MD5·SHA-1·SHA-256·SHA-512) ونبحث عنه في جدول يُحسَب فوراً من قائمة كلمات موسّعة وتحويراتها. يعمل مع الهاش غير المملّح فقط.</span></h3>
+    <textarea id="csIn" dir="ltr" placeholder="هاش واحد في كل سطر — مثال:&#10;5f4dcc3b5aa765d61d8327deb882cf99&#10;7c4a8d09ca3762af61e59520943dc26494f8941b&#10;2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824" style="min-height:92px" spellcheck="false"></textarea>
+    <div class="btns" style="margin-top:6px">
+      <label class="small-t"><input type="checkbox" id="csMut" checked> وسّع بالتحويرات (حالة الأحرف · leet · أرقام 0–999 · رموز)</label>
+      <label class="small-t"><input type="checkbox" id="csCommon" checked> استخدم القائمة المدمجة الموسّعة</label>
+    </div>
+    <textarea id="csWords" dir="ltr" placeholder="كلمات إضافية من التحدي — واحدة في كل سطر (اختياري)" style="min-height:46px" spellcheck="false"></textarea>
+    <div class="btns" style="margin-top:6px"><button id="csBtn" class="primary">🪄 ابحث عن الكل</button><button id="csStop" hidden>⏹️ إيقاف</button></div>
+    <div class="status" id="csProg"></div>
+    <div id="csOut"></div>
   </div>
   <div class="grid2">
     <div class="card">
