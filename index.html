@@ -49,6 +49,7 @@
     <button data-tab="file"><i>🗂️</i>تحليل الملفات</button>
     <button data-tab="hash"><i>#️⃣</i>الهاش والأرقام</button>
     <button data-tab="web"><i>🌐</i>الويب</button>
+    <button data-tab="jsterm"><i>⌨️</i>JS ← طرفية</button>
     <button data-tab="python"><i>🐍</i>بايثون</button>
     <button data-tab="modexp"><i>🔁</i>فك أسّي</button>
     <button data-tab="algo"><i>🧮</i>خوارزميات</button>
@@ -291,6 +292,39 @@
     </div>
     <div class="btns"><button id="cmpBtn" class="primary">⚖️ قارن</button><label class="small-t"><input type="checkbox" id="cmpWs"> تجاهل المسافات</label><label class="small-t"><input type="checkbox" id="cmpCase"> تجاهل حالة الأحرف</label><label class="small-t"><input type="checkbox" id="cmpOnly" checked> أظهر الاختلافات فقط</label><span id="cmpInfo" class="status"></span></div>
     <div class="out diff" id="cmpOut" style="margin-top:8px;max-height:480px"></div>
+  </div>
+</section>
+
+<!-- ================= JS ← TERMINAL ================= -->
+<section id="jsterm" class="panel">
+  <div class="hero">
+    <h2>⌨️ جافاسكربت ← أوامر الطرفية</h2>
+    <p>ألصق كود الشبكة الذي وجدته في جافاسكربت الموقع (<code>fetch</code> · <code>XMLHttpRequest</code> · <code>axios</code> · <code>$.ajax</code>) فنُشغّله في <b>عامل معزول دون أي اتصال فعلي بالشبكة</b> ونحوّل كل طلب إلى أمر <code>curl</code> جاهز للطرفية. أو غلّف أي كود جافاسكربت كأمر <code>node</code> لتشغيله خارج المتصفح.</p>
+  </div>
+  <div class="card">
+    <h3>🌐 طلبات جافاسكربت ← curl</h3>
+    <textarea id="jtIn" dir="ltr" placeholder="ألصق كود fetch / XHR / axios هنا…" style="min-height:150px;font-family:var(--mono)" spellcheck="false"></textarea>
+    <div class="btns" style="margin-top:6px">
+      <label class="small-t">الصيغة
+        <select id="jtFmt"><option value="curl" selected>curl</option><option value="wget">wget</option><option value="httpie">httpie</option></select>
+      </label>
+      <label class="small-t">عنوان الأساس (لحل الروابط النسبية) <input type="text" id="jtBase" dir="ltr" placeholder="https://target.site/app/" style="width:230px" spellcheck="false"></label>
+    </div>
+    <div class="btns" style="margin-top:6px"><button id="jtBtn" class="primary">⚡ استخرج الأوامر</button><button class="small" data-clear="jtIn">مسح</button><button id="jtSample" class="small">مثال</button></div>
+    <div class="status" id="jtProg"></div>
+    <div id="jtOut"></div>
+  </div>
+  <div class="card">
+    <h3>🖥️ جافاسكربت ← أمر node</h3>
+    <p class="small-t muted">غلّف منطق الموقع (مثلاً دالة تحسب العلم من مدخلات) كأمر طرفية بـ <code>node</code>. زر «جرّبه الآن» يشغّله في عامل معزول (الشبكة معطّلة) ويعرض مخرجات <code>console.log</code> — مفيد لكشف العلم مباشرةً.</p>
+    <div class="status" style="border-color:var(--warn)">⚠️ لا تشغّل كود مواقع مجهولة على جهازك الأساسي. شغّل أمر <code>node</code> داخل حاوية أو جهاز افتراضي معزول.</div>
+    <textarea id="jnIn" dir="ltr" placeholder="ألصق كود جافاسكربت لتغليفه كأمر node…" style="min-height:120px;font-family:var(--mono)" spellcheck="false"></textarea>
+    <div class="btns" style="margin-top:6px">
+      <label class="small-t"><input type="radio" name="jnMode" value="heredoc" checked> heredoc (عدة أسطر)</label>
+      <label class="small-t"><input type="radio" name="jnMode" value="inline"> node -e (سطر واحد)</label>
+    </div>
+    <div class="btns" style="margin-top:6px"><button id="jnBtn" class="primary">🧱 ولّد الأمر</button><button id="jnRun" class="small">▶️ جرّبه الآن (معزول)</button><button class="small" data-clear="jnIn">مسح</button></div>
+    <div id="jnOut"></div>
   </div>
 </section>
 
@@ -911,6 +945,7 @@
 <script src="js/forensics.js"></script>
 <script src="js/web.js"></script>
 <script src="js/jsfuck.js"></script>
+<script src="js/jsterm.js"></script>
 <script src="js/crack.js"></script>
 <script src="js/python.js"></script>
 <script src="js/missions.js"></script>

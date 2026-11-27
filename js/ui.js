@@ -1,7 +1,7 @@
 /* صائد الأعلام — واجهة الأدوات */
 (function () {
   'use strict';
-  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW, JF = window.CTFJ, KR = window.CTFK, PY = window.CTFP;
+  const C = window.CTF, F = window.CTFF, G = window.GAME, W = window.CTFW, JF = window.CTFJ, KR = window.CTFK, PY = window.CTFP, JT = window.CTFT;
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -46,7 +46,7 @@
   });
 
   /* ---------- التبويبات ---------- */
-  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'python', 'modexp', 'algo', 'train', 'cheat'];
+  const TABS = ['scan', 'decode', 'cipher', 'file', 'hash', 'web', 'jsterm', 'python', 'modexp', 'algo', 'train', 'cheat'];
   const TABNAME = { decode: 'فك الترميز', cipher: 'الشيفرات', hash: 'الهاش', scan: 'الفحص', file: 'التحليل', web: 'الويب' };
   function showTab(id) {
     if (!TABS.includes(id)) id = 'scan';
@@ -62,7 +62,7 @@
     if (e.altKey && e.key >= '1' && e.key <= '9') { e.preventDefault(); showTab(TABS[+e.key - 1]); }
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       const id = $('.panel.active').id; e.preventDefault();
-      ({ scan: () => scanText(true), decode: runMagic, cipher: runAllCiphers, web: runWeb, python: () => pyRun() })[id]?.();
+      ({ scan: () => scanText(true), decode: runMagic, cipher: runAllCiphers, web: runWeb, jsterm: () => jtRun(), python: () => pyRun() })[id]?.();
     }
   });
   function sendTo(tab, text) {
@@ -731,6 +731,57 @@
     }
   });
   $('#csStop').addEventListener('click', () => { if (KR.stop()) { csRunning = false; $('#csBtn').textContent = '🪄 ابحث عن الكل'; $('#csStop').hidden = true; $('#csProg').textContent = ''; $('#csOut').innerHTML = `<div class="noflag">⏹️ أُوقف البحث.</div>`; } });
+
+  /* ================= جافاسكربت ← الطرفية ================= */
+  async function jtRun() {
+    const code = $('#jtIn').value;
+    if (!code.trim()) { $('#jtOut').innerHTML = `<div class="noflag">ألصق كود جافاسكربت أولاً.</div>`; return; }
+    const base = $('#jtBase').value.trim(), fmt = $('#jtFmt').value;
+    $('#jtProg').innerHTML = '<span class="spinner"></span> نشغّل الكود معزولاً ونلتقط الطلبات…'; $('#jtOut').innerHTML = '';
+    const r = await JT.capture(code, base);
+    $('#jtProg').textContent = '';
+    const gen = JT.FORMATS[fmt] || JT.reqToCurl;
+    let html = '';
+    if (r.requests.length) {
+      html += `<div class="status">التُقط ${r.requests.length.toLocaleString('ar')} طلب.</div>`;
+      html += r.requests.map((req, i) => {
+        const cmd = gen(req, base);
+        return `<div class="card" style="margin:8px 0"><div class="small-t muted">#${i + 1} · <b>${esc(req.method)}</b> <span dir="ltr">${esc(JT.resolveUrl(req.url, base))}</span></div><pre class="cp" dir="ltr" style="white-space:pre-wrap">${esc(cmd)}</pre><div class="btns">${copyBtn(cmd)}</div></div>`;
+      }).join('');
+    } else if (!r.error) {
+      html += `<div class="noflag">لم يُلتقط أي طلب شبكة. تأكد أن الكود يستدعي fetch / XHR / axios مباشرةً (لا داخل مُعالِج حدث لا يُستدعى).</div>`;
+    }
+    if (r.error) html += `<div class="${r.requests.length ? 'status muted' : 'noflag'}">${r.requests.length ? 'توقف التنفيذ عند خطأ بعد الالتقاط: ' : '⚠️ '}${esc(r.error)}</div>`;
+    if (r.logs && r.logs.length) {
+      html += `<div class="card" style="margin-top:8px"><h3>📋 مخرجات console</h3><pre class="cp" dir="ltr" style="white-space:pre-wrap">${esc(r.logs.join('\n'))}</pre></div>`;
+      for (const line of r.logs) { const fl = C.findFlags(line); if (fl.length) { G.onFlags([{ flag: fl[0], method: 'JS ← طرفية' }]); break; } }
+    }
+    $('#jtOut').innerHTML = html;
+  }
+  $('#jtBtn').addEventListener('click', jtRun);
+  $('#jtSample').addEventListener('click', () => { $('#jtIn').value = JT.SAMPLE; $('#jtBase').value = 'https://target.site/app/'; jtRun(); });
+
+  function jnGen() {
+    const src = $('#jnIn').value;
+    if (!src.trim()) { $('#jnOut').innerHTML = `<div class="noflag">ألصق كود جافاسكربت أولاً.</div>`; return; }
+    const mode = ($$('input[name=jnMode]').find(x => x.checked) || {}).value || 'heredoc';
+    const cmd = JT.toNodeCmd(src, mode);
+    $('#jnOut').innerHTML = `<pre class="cp" dir="ltr" style="white-space:pre-wrap;margin-top:8px">${esc(cmd)}</pre><div class="btns">${copyBtn(cmd)}</div>`;
+  }
+  $('#jnBtn').addEventListener('click', jnGen);
+  $('#jnRun').addEventListener('click', async () => {
+    const src = $('#jnIn').value;
+    if (!src.trim()) { $('#jnOut').innerHTML = `<div class="noflag">ألصق كود جافاسكربت أولاً.</div>`; return; }
+    $('#jnOut').innerHTML = '<span class="spinner"></span> نشغّل معزولاً…';
+    const r = await JT.capture(src, $('#jtBase').value.trim());
+    let html = '';
+    if (r.logs && r.logs.length) html += `<div class="card"><h3>📋 مخرجات console</h3><pre class="cp" dir="ltr" style="white-space:pre-wrap">${esc(r.logs.join('\n'))}</pre></div>`;
+    if (r.requests && r.requests.length) html += `<div class="status">حاول الكود إرسال ${r.requests.length.toLocaleString('ar')} طلب شبكة (مُعطّل) — حوّلها في بطاقة «طلبات ← curl».</div>`;
+    if (r.error) html += `<div class="noflag">⚠️ ${esc(r.error)}</div>`;
+    if (!(r.logs && r.logs.length) && !r.error && !(r.requests && r.requests.length)) html += `<div class="noflag">لا مخرجات console. أضف <code>console.log(...)</code> لرؤية النتيجة.</div>`;
+    $('#jnOut').innerHTML = html;
+    for (const line of (r.logs || [])) { const fl = C.findFlags(line); if (fl.length) { G.onFlags([{ flag: fl[0], method: 'JS ← node' }]); break; } }
+  });
 
   /* ================= بايثون (Pyodide) ================= */
   let pyBytes = null, pyLoadingShown = false;
